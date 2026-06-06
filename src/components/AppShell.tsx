@@ -1,11 +1,27 @@
 import { Link } from "@tanstack/react-router";
-import { Search, Upload, LogIn, LogOut, User, Music2 } from "lucide-react";
+import { Upload, LogIn, LogOut, Music2, User } from "lucide-react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { PlayerBar } from "./PlayerBar";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setUsername(null);
+      return;
+    }
+    supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setUsername(data?.username ?? null));
+  }, [user]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
