@@ -60,13 +60,24 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Upload size={14} /> Upload
           </Link>
           {user ? (
-            <button
-              onClick={signOut}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground"
-              aria-label="Sign out"
-            >
-              <LogOut size={14} /> <span className="hidden sm:inline">Sign out</span>
-            </button>
+            <>
+              {username && (
+                <Link
+                  to="/profile/$username"
+                  params={{ username }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <User size={14} /> <span className="hidden sm:inline">Profile</span>
+                </Link>
+              )}
+              <button
+                onClick={signOut}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground"
+                aria-label="Sign out"
+              >
+                <LogOut size={14} /> <span className="hidden sm:inline">Sign out</span>
+              </button>
+            </>
           ) : (
             <Link
               to="/auth"
