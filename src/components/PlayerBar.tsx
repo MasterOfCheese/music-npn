@@ -97,6 +97,43 @@ export function PlayerBar() {
           </div>
           <span className="text-xs tabular-nums text-muted-foreground w-10">{fmt(duration)}</span>
         </div>
+
+        <div className="hidden md:flex items-center gap-2 w-48 shrink-0 justify-end">
+          <button
+            onClick={cycleRepeat}
+            className={
+              "size-8 grid place-items-center hover:text-foreground transition " +
+              (repeat === "off" ? "text-muted-foreground" : "text-primary")
+            }
+            aria-label={`Repeat: ${repeat}`}
+            title={`Repeat: ${repeat}`}
+          >
+            {repeat === "one" ? <Repeat1 size={18} /> : <Repeat size={18} />}
+          </button>
+          <button
+            onClick={toggleMute}
+            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground"
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            {muted || volume === 0 ? (
+              <VolumeX size={18} />
+            ) : volume < 0.5 ? (
+              <Volume1 size={18} />
+            ) : (
+              <Volume2 size={18} />
+            )}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={muted ? 0 : volume}
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            aria-label="Volume"
+            className="w-24 accent-primary cursor-pointer"
+          />
+        </div>
       </div>
     </div>
   );
