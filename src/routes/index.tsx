@@ -5,6 +5,7 @@ import { TrackCard } from "@/components/TrackCard";
 import type { Track } from "@/lib/types";
 import { useState } from "react";
 import { Flame, Clock, Users } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 type Filter = "trending" | "new" | "following";
 
