@@ -208,7 +208,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_track_plays: { Args: { _track_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
