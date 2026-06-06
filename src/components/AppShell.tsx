@@ -1,11 +1,27 @@
 import { Link } from "@tanstack/react-router";
-import { Search, Upload, LogIn, LogOut, User, Music2 } from "lucide-react";
+import { Upload, LogIn, LogOut, Music2, User } from "lucide-react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { PlayerBar } from "./PlayerBar";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setUsername(null);
+      return;
+    }
+    supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setUsername(data?.username ?? null));
+  }, [user]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -44,13 +60,24 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Upload size={14} /> Upload
           </Link>
           {user ? (
-            <button
-              onClick={signOut}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground"
-              aria-label="Sign out"
-            >
-              <LogOut size={14} /> <span className="hidden sm:inline">Sign out</span>
-            </button>
+            <>
+              {username && (
+                <Link
+                  to="/profile/$username"
+                  params={{ username }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <User size={14} /> <span className="hidden sm:inline">Profile</span>
+                </Link>
+              )}
+              <button
+                onClick={signOut}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground"
+                aria-label="Sign out"
+              >
+                <LogOut size={14} /> <span className="hidden sm:inline">Sign out</span>
+              </button>
+            </>
           ) : (
             <Link
               to="/auth"

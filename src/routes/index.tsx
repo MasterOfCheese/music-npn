@@ -5,6 +5,7 @@ import { TrackCard } from "@/components/TrackCard";
 import type { Track } from "@/lib/types";
 import { useState } from "react";
 import { Flame, Clock, Users } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 type Filter = "trending" | "new" | "following";
 
@@ -18,7 +19,17 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-async function fetchFeed(filter: Filter): Promise<Track[]> {
+async function fetchFeed(filter: Filter, userId?: string): Promise<Track[]> {
+  let followingIds: string[] | null = null;
+  if (filter === "following") {
+    if (!userId) return [];
+    const { data: f } = await supabase
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", userId);
+    followingIds = (f ?? []).map((r) => r.following_id);
+    if (followingIds.length === 0) return [];
+  }
   let q = supabase
     .from("tracks")
     .select(
@@ -27,6 +38,7 @@ async function fetchFeed(filter: Filter): Promise<Track[]> {
     .limit(30);
   if (filter === "trending") q = q.order("plays_count", { ascending: false });
   else q = q.order("created_at", { ascending: false });
+  if (followingIds) q = q.in("user_id", followingIds);
   const { data, error } = await q;
   if (error) throw error;
   return (data ?? []).map((r: any) => ({
@@ -36,10 +48,11 @@ async function fetchFeed(filter: Filter): Promise<Track[]> {
 }
 
 function Home() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState<Filter>("new");
   const { data, isLoading } = useQuery({
-    queryKey: ["feed", filter],
-    queryFn: () => fetchFeed(filter),
+    queryKey: ["feed", filter, user?.id ?? null],
+    queryFn: () => fetchFeed(filter, user?.id),
   });
 
   return (
