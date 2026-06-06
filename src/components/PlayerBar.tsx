@@ -1,4 +1,4 @@
-import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import { Pause, Play, Repeat, Repeat1, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from "lucide-react";
 import { usePlayer } from "@/lib/player-context";
 import { Waveform } from "./Waveform";
 import { Link } from "@tanstack/react-router";
@@ -13,7 +13,21 @@ function fmt(s: number) {
 }
 
 export function PlayerBar() {
-  const { current, playing, toggle, progress, seek, currentTime, duration } = usePlayer();
+  const {
+    current,
+    playing,
+    toggle,
+    progress,
+    seek,
+    currentTime,
+    duration,
+    volume,
+    muted,
+    repeat,
+    setVolume,
+    toggleMute,
+    cycleRepeat,
+  } = usePlayer();
   const [cover, setCover] = useState<string | null>(null);
 
   useEffect(() => {
