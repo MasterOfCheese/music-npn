@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrackIdRouteImport } from './routes/track.$id'
 import { Route as ProfileUsernameRouteImport } from './routes/profile.$username'
+import { Route as AlbumIdRouteImport } from './routes/album.$id'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -52,6 +53,11 @@ const ProfileUsernameRoute = ProfileUsernameRouteImport.update({
   path: '/profile/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlbumIdRoute = AlbumIdRouteImport.update({
+  id: '/album/$id',
+  path: '/album/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/album/$id': typeof AlbumIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/track/$id': typeof TrackIdRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/album/$id': typeof AlbumIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/track/$id': typeof TrackIdRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
+  '/album/$id': typeof AlbumIdRoute
   '/profile/$username': typeof ProfileUsernameRoute
   '/track/$id': typeof TrackIdRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sitemap.xml'
     | '/upload'
+    | '/album/$id'
     | '/profile/$username'
     | '/track/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sitemap.xml'
     | '/upload'
+    | '/album/$id'
     | '/profile/$username'
     | '/track/$id'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sitemap.xml'
     | '/upload'
+    | '/album/$id'
     | '/profile/$username'
     | '/track/$id'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
+  AlbumIdRoute: typeof AlbumIdRoute
   ProfileUsernameRoute: typeof ProfileUsernameRoute
   TrackIdRoute: typeof TrackIdRoute
 }
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/album/$id': {
+      id: '/album/$id'
+      path: '/album/$id'
+      fullPath: '/album/$id'
+      preLoaderRoute: typeof AlbumIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
+  AlbumIdRoute: AlbumIdRoute,
   ProfileUsernameRoute: ProfileUsernameRoute,
   TrackIdRoute: TrackIdRoute,
 }

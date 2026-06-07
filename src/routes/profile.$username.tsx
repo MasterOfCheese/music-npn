@@ -4,9 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrackCard } from "@/components/TrackCard";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
-import { CalendarDays, Music2, Heart, Repeat2, UserPlus, UserCheck, Pencil, Loader2 } from "lucide-react";
+import {
+  CalendarDays,
+  Music2,
+  Heart,
+  Repeat2,
+  UserPlus,
+  UserCheck,
+  Pencil,
+  Loader2,
+  ListMusic,
+  Plus,
+  Lock,
+  Globe,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+
 
 export const Route = createFileRoute("/profile/$username")({
   component: Profile,
@@ -18,7 +32,7 @@ export const Route = createFileRoute("/profile/$username")({
   }),
 });
 
-type Tab = "tracks" | "likes" | "reposts";
+type Tab = "tracks" | "albums" | "likes" | "reposts";
 
 async function fetchProfile(username: string, viewerId?: string) {
   const { data: profile, error } = await supabase
@@ -64,6 +78,14 @@ async function fetchTabData(userId: string, tab: Tab) {
       .order("created_at", { ascending: false });
     return (data ?? []).map((r: any) => ({ ...r, likes_count: r.likes?.[0]?.count ?? 0 }));
   }
+  if (tab === "albums") {
+    const { data } = await supabase
+      .from("albums")
+      .select("id, title, description, cover_url, is_public, created_at, updated_at, album_tracks(track_id)")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+    return (data ?? []).map((a: any) => ({ ...a, tracks_count: a.album_tracks?.length ?? 0 }));
+  }
   const join = tab === "likes" ? "likes" : "reposts";
   const { data } = await supabase
     .from(join)
@@ -75,6 +97,7 @@ async function fetchTabData(userId: string, tab: Tab) {
     .filter(Boolean)
     .map((r: any) => ({ ...r, likes_count: r.likes?.[0]?.count ?? 0 }));
 }
+
 
 function Profile() {
   const { username } = Route.useParams();
@@ -152,15 +175,22 @@ function Profile() {
 
   return (
     <div>
-      {/* Banner */}
-      <div className="h-40 sm:h-64 gradient-orange relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+      {/* Banner — short SoundCloud-style hero with subtle pattern */}
+      <div className="h-32 sm:h-44 gradient-orange relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-30 mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 0, transparent 40%), radial-gradient(circle at 80% 70%, rgba(0,0,0,0.3) 0, transparent 40%)",
+          }}
+        />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       <div className="mx-auto max-w-5xl px-4">
         {/* Header */}
-        <div className="-mt-16 sm:-mt-20 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
-          <div className="size-28 sm:size-36 rounded-full border-4 border-background bg-card overflow-hidden gradient-orange grid place-items-center text-4xl font-bold text-primary-foreground shrink-0 play-shadow">
+        <div className="-mt-14 sm:-mt-16 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+          <div className="size-28 sm:size-32 rounded-full border-4 border-background bg-card overflow-hidden gradient-orange grid place-items-center text-4xl font-bold text-primary-foreground shrink-0 play-shadow">
             {avatarSrc ? (
               <img src={avatarSrc} alt={profile.username} className="size-full object-cover" />
             ) : (
@@ -242,9 +272,10 @@ function Profile() {
         )}
 
         {/* Tabs */}
-        <div className="mt-8 border-b border-border flex items-center gap-1">
+        <div className="mt-8 border-b border-border flex items-center gap-1 overflow-x-auto">
           {([
             ["tracks", "Tracks", Music2],
+            ["albums", "Albums", ListMusic],
             ["likes", "Likes", Heart],
             ["reposts", "Reposts", Repeat2],
           ] as const).map(([k, label, Icon]) => (
@@ -252,7 +283,7 @@ function Profile() {
               key={k}
               onClick={() => setTab(k)}
               className={
-                "inline-flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition " +
+                "inline-flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition whitespace-nowrap " +
                 (tab === k
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground")
@@ -264,27 +295,40 @@ function Profile() {
         </div>
 
         {/* Tab content */}
-        <div className="mt-6 mb-12 flex flex-col gap-3">
-          {tabLoading &&
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-36 rounded-lg bg-card border border-border animate-pulse" />
-            ))}
-          {!tabLoading && (tabData ?? []).map((t: any) => <TrackCard key={t.id} track={t} />)}
-          {!tabLoading && (tabData ?? []).length === 0 && (
-            <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
-              {tab === "tracks"
-                ? isOwn
-                  ? "You haven't uploaded any tracks yet."
-                  : "No tracks yet."
-                : tab === "likes"
-                  ? "No liked tracks yet."
-                  : "No reposts yet."}
+        <div className="mt-6 mb-12">
+          {tab === "albums" ? (
+            <AlbumsTabContent
+              userId={profile.id}
+              isOwn={isOwn}
+              albums={(tabData ?? []) as any[]}
+              loading={tabLoading}
+              onCreated={() => qc.invalidateQueries({ queryKey: ["profile-tab", profile.id, "albums"] })}
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {tabLoading &&
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-36 rounded-lg bg-card border border-border animate-pulse" />
+                ))}
+              {!tabLoading && (tabData ?? []).map((t: any) => <TrackCard key={t.id} track={t} />)}
+              {!tabLoading && (tabData ?? []).length === 0 && (
+                <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
+                  {tab === "tracks"
+                    ? isOwn
+                      ? "You haven't uploaded any tracks yet."
+                      : "No tracks yet."
+                    : tab === "likes"
+                      ? "No liked tracks yet."
+                      : "No reposts yet."}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
     </div>
   );
+
 }
 
 function EditProfileDialog({
@@ -385,3 +429,147 @@ function EditProfileDialog({
     </div>
   );
 }
+
+function AlbumsTabContent({
+  userId,
+  isOwn,
+  albums,
+  loading,
+  onCreated,
+}: {
+  userId: string;
+  isOwn: boolean;
+  albums: any[];
+  loading: boolean;
+  onCreated: () => void;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [title, setTitle] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const create = async () => {
+    if (!title.trim()) {
+      toast.error("Title required");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("albums")
+      .insert({ user_id: userId, title: title.trim(), is_public: isPublic });
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Album created");
+    setTitle("");
+    setCreating(false);
+    onCreated();
+  };
+
+  return (
+    <div className="space-y-4">
+      {isOwn && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 play-shadow"
+          >
+            <Plus size={14} /> New album
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="aspect-square rounded-lg bg-card border border-border animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {!loading && albums.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
+          {isOwn ? "Create your first album to group tracks." : "No albums yet."}
+        </div>
+      )}
+
+      {!loading && albums.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {albums.map((a) => (
+            <Link
+              key={a.id}
+              to="/album/$id"
+              params={{ id: a.id }}
+              className="group rounded-lg bg-card border border-border hover:border-primary/50 overflow-hidden transition"
+            >
+              <div className="aspect-square gradient-orange grid place-items-center text-primary-foreground relative">
+                <Music2 size={36} className="opacity-80 group-hover:scale-110 transition-transform" />
+                <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/40 text-[10px] uppercase">
+                  {a.is_public ? <Globe size={10} /> : <Lock size={10} />}
+                  {a.is_public ? "Public" : "Private"}
+                </span>
+              </div>
+              <div className="p-3">
+                <div className="font-medium truncate">{a.title}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {a.tracks_count} {a.tracks_count === 1 ? "track" : "tracks"}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {creating && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          onClick={() => setCreating(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-card border border-border p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold">New album</h2>
+            <label className="block">
+              <span className="text-xs text-muted-foreground">Title</span>
+              <input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={100}
+                className="mt-1 w-full rounded-md bg-input border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="accent-primary"
+              />
+              Public album
+            </label>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setCreating(false)}
+                className="px-4 py-2 rounded-md border border-border text-sm hover:bg-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={create}
+                disabled={saving}
+                className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {saving && <Loader2 size={14} className="animate-spin" />} Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

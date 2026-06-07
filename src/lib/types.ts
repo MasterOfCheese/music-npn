@@ -31,3 +31,17 @@ export type Comment = {
   created_at: string;
   profiles?: { username: string; avatar_url: string | null } | null;
 };
+
+export type Album = {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  cover_url: string | null;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+  profiles?: { username: string; display_name: string | null; avatar_url: string | null } | null;
+  tracks_count?: number;
+};
+
