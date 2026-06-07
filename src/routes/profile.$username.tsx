@@ -429,3 +429,147 @@ function EditProfileDialog({
     </div>
   );
 }
+
+function AlbumsTabContent({
+  userId,
+  isOwn,
+  albums,
+  loading,
+  onCreated,
+}: {
+  userId: string;
+  isOwn: boolean;
+  albums: any[];
+  loading: boolean;
+  onCreated: () => void;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [title, setTitle] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const create = async () => {
+    if (!title.trim()) {
+      toast.error("Title required");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("albums")
+      .insert({ user_id: userId, title: title.trim(), is_public: isPublic });
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Album created");
+    setTitle("");
+    setCreating(false);
+    onCreated();
+  };
+
+  return (
+    <div className="space-y-4">
+      {isOwn && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 play-shadow"
+          >
+            <Plus size={14} /> New album
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="aspect-square rounded-lg bg-card border border-border animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {!loading && albums.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
+          {isOwn ? "Create your first album to group tracks." : "No albums yet."}
+        </div>
+      )}
+
+      {!loading && albums.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {albums.map((a) => (
+            <Link
+              key={a.id}
+              to="/album/$id"
+              params={{ id: a.id }}
+              className="group rounded-lg bg-card border border-border hover:border-primary/50 overflow-hidden transition"
+            >
+              <div className="aspect-square gradient-orange grid place-items-center text-primary-foreground relative">
+                <Music2 size={36} className="opacity-80 group-hover:scale-110 transition-transform" />
+                <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/40 text-[10px] uppercase">
+                  {a.is_public ? <Globe size={10} /> : <Lock size={10} />}
+                  {a.is_public ? "Public" : "Private"}
+                </span>
+              </div>
+              <div className="p-3">
+                <div className="font-medium truncate">{a.title}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {a.tracks_count} {a.tracks_count === 1 ? "track" : "tracks"}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {creating && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          onClick={() => setCreating(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-card border border-border p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold">New album</h2>
+            <label className="block">
+              <span className="text-xs text-muted-foreground">Title</span>
+              <input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={100}
+                className="mt-1 w-full rounded-md bg-input border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="accent-primary"
+              />
+              Public album
+            </label>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setCreating(false)}
+                className="px-4 py-2 rounded-md border border-border text-sm hover:bg-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={create}
+                disabled={saving}
+                className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {saving && <Loader2 size={14} className="animate-spin" />} Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
