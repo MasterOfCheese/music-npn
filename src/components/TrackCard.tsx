@@ -3,8 +3,10 @@ import { Heart, Play, Pause, Repeat2, MessageCircle } from "lucide-react";
 import type { Track } from "@/lib/types";
 import { usePlayer } from "@/lib/player-context";
 import { Waveform } from "./Waveform";
+import { AddToAlbumButton } from "./AddToAlbumButton";
 import { useEffect, useState } from "react";
 import { getSignedUrl } from "@/lib/storage";
+
 
 export function TrackCard({ track }: { track: Track }) {
   const { current, playing, progress, play, toggle, seek } = usePlayer();
