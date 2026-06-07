@@ -78,6 +78,14 @@ async function fetchTabData(userId: string, tab: Tab) {
       .order("created_at", { ascending: false });
     return (data ?? []).map((r: any) => ({ ...r, likes_count: r.likes?.[0]?.count ?? 0 }));
   }
+  if (tab === "albums") {
+    const { data } = await supabase
+      .from("albums")
+      .select("id, title, description, cover_url, is_public, created_at, updated_at, album_tracks(track_id)")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+    return (data ?? []).map((a: any) => ({ ...a, tracks_count: a.album_tracks?.length ?? 0 }));
+  }
   const join = tab === "likes" ? "likes" : "reposts";
   const { data } = await supabase
     .from(join)
@@ -89,6 +97,7 @@ async function fetchTabData(userId: string, tab: Tab) {
     .filter(Boolean)
     .map((r: any) => ({ ...r, likes_count: r.likes?.[0]?.count ?? 0 }));
 }
+
 
 function Profile() {
   const { username } = Route.useParams();
