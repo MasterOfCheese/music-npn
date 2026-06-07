@@ -32,7 +32,7 @@ export const Route = createFileRoute("/profile/$username")({
   }),
 });
 
-type Tab = "tracks" | "likes" | "reposts";
+type Tab = "tracks" | "albums" | "likes" | "reposts";
 
 async function fetchProfile(username: string, viewerId?: string) {
   const { data: profile, error } = await supabase
