@@ -4,9 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrackCard } from "@/components/TrackCard";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useState } from "react";
-import { CalendarDays, Music2, Heart, Repeat2, UserPlus, UserCheck, Pencil, Loader2 } from "lucide-react";
+import {
+  CalendarDays,
+  Music2,
+  Heart,
+  Repeat2,
+  UserPlus,
+  UserCheck,
+  Pencil,
+  Loader2,
+  ListMusic,
+  Plus,
+  Lock,
+  Globe,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+
 
 export const Route = createFileRoute("/profile/$username")({
   component: Profile,
