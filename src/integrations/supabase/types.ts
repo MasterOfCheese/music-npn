@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      album_tracks: {
+        Row: {
+          added_at: string
+          album_id: string
+          position: number
+          track_id: string
+        }
+        Insert: {
+          added_at?: string
+          album_id: string
+          position?: number
+          track_id: string
+        }
+        Update: {
+          added_at?: string
+          album_id?: string
+          position?: number
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "album_tracks_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "album_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      albums: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
