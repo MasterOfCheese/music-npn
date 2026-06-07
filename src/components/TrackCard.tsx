@@ -90,7 +90,9 @@ export function TrackCard({ track }: { track: Track }) {
           <span className="inline-flex items-center gap-1">
             <Repeat2 size={12} /> 0
           </span>
+          <AddToAlbumButton trackId={track.id} className="ml-auto" />
         </div>
+
       </div>
     </article>
   );
