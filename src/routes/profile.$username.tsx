@@ -175,15 +175,22 @@ function Profile() {
 
   return (
     <div>
-      {/* Banner */}
-      <div className="h-40 sm:h-64 gradient-orange relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+      {/* Banner — short SoundCloud-style hero with subtle pattern */}
+      <div className="h-32 sm:h-44 gradient-orange relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-30 mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 0, transparent 40%), radial-gradient(circle at 80% 70%, rgba(0,0,0,0.3) 0, transparent 40%)",
+          }}
+        />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </div>
 
       <div className="mx-auto max-w-5xl px-4">
         {/* Header */}
-        <div className="-mt-16 sm:-mt-20 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
-          <div className="size-28 sm:size-36 rounded-full border-4 border-background bg-card overflow-hidden gradient-orange grid place-items-center text-4xl font-bold text-primary-foreground shrink-0 play-shadow">
+        <div className="-mt-14 sm:-mt-16 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+          <div className="size-28 sm:size-32 rounded-full border-4 border-background bg-card overflow-hidden gradient-orange grid place-items-center text-4xl font-bold text-primary-foreground shrink-0 play-shadow">
             {avatarSrc ? (
               <img src={avatarSrc} alt={profile.username} className="size-full object-cover" />
             ) : (
@@ -265,9 +272,10 @@ function Profile() {
         )}
 
         {/* Tabs */}
-        <div className="mt-8 border-b border-border flex items-center gap-1">
+        <div className="mt-8 border-b border-border flex items-center gap-1 overflow-x-auto">
           {([
             ["tracks", "Tracks", Music2],
+            ["albums", "Albums", ListMusic],
             ["likes", "Likes", Heart],
             ["reposts", "Reposts", Repeat2],
           ] as const).map(([k, label, Icon]) => (
@@ -275,7 +283,7 @@ function Profile() {
               key={k}
               onClick={() => setTab(k)}
               className={
-                "inline-flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition " +
+                "inline-flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition whitespace-nowrap " +
                 (tab === k
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground")
@@ -287,27 +295,40 @@ function Profile() {
         </div>
 
         {/* Tab content */}
-        <div className="mt-6 mb-12 flex flex-col gap-3">
-          {tabLoading &&
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-36 rounded-lg bg-card border border-border animate-pulse" />
-            ))}
-          {!tabLoading && (tabData ?? []).map((t: any) => <TrackCard key={t.id} track={t} />)}
-          {!tabLoading && (tabData ?? []).length === 0 && (
-            <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
-              {tab === "tracks"
-                ? isOwn
-                  ? "You haven't uploaded any tracks yet."
-                  : "No tracks yet."
-                : tab === "likes"
-                  ? "No liked tracks yet."
-                  : "No reposts yet."}
+        <div className="mt-6 mb-12">
+          {tab === "albums" ? (
+            <AlbumsTabContent
+              userId={profile.id}
+              isOwn={isOwn}
+              albums={(tabData ?? []) as any[]}
+              loading={tabLoading}
+              onCreated={() => qc.invalidateQueries({ queryKey: ["profile-tab", profile.id, "albums"] })}
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {tabLoading &&
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-36 rounded-lg bg-card border border-border animate-pulse" />
+                ))}
+              {!tabLoading && (tabData ?? []).map((t: any) => <TrackCard key={t.id} track={t} />)}
+              {!tabLoading && (tabData ?? []).length === 0 && (
+                <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
+                  {tab === "tracks"
+                    ? isOwn
+                      ? "You haven't uploaded any tracks yet."
+                      : "No tracks yet."
+                    : tab === "likes"
+                      ? "No liked tracks yet."
+                      : "No reposts yet."}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
     </div>
   );
+
 }
 
 function EditProfileDialog({
