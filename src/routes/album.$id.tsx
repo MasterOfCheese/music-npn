@@ -38,26 +38,32 @@ const TRACK_COLS =
 async function fetchAlbum(id: string) {
   const { data: album, error } = await supabase
     .from("albums")
-    .select(
-      "id, user_id, title, description, cover_url, is_public, created_at, updated_at, profiles!albums_user_id_fkey(username, display_name, avatar_url)",
-    )
+    .select("id, user_id, title, description, cover_url, is_public, created_at, updated_at")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   if (!album) return null;
 
-  const { data: rows } = await supabase
-    .from("album_tracks")
-    .select(`position, added_at, tracks(${TRACK_COLS})`)
-    .eq("album_id", id)
-    .order("position", { ascending: true });
+  const [{ data: profile }, { data: rows }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("username, display_name, avatar_url")
+      .eq("id", album.user_id)
+      .maybeSingle(),
+    supabase
+      .from("album_tracks")
+      .select(`position, added_at, tracks(${TRACK_COLS})`)
+      .eq("album_id", id)
+      .order("position", { ascending: true }),
+  ]);
 
   const tracks = (rows ?? [])
     .map((r: any) => r.tracks as Track | null)
     .filter(Boolean) as Track[];
 
-  return { album, tracks };
+  return { album: { ...album, profiles: profile ?? null }, tracks };
 }
+
 
 function fmt(sec: number | null | undefined) {
   if (!sec) return "—";
