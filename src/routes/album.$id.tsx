@@ -77,7 +77,7 @@ function AlbumPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { play, toggle, current, playing } = usePlayer();
+  const { playQueue, toggle, current, playing } = usePlayer();
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
