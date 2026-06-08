@@ -261,10 +261,9 @@ function AlbumPage() {
               <div className="min-w-0">
                 {/* Đã sửa Link đến track với slug */}
                 <Link
-                  to="/track/$username/$slug"
+                  to="/track/$id"
                   params={{
-                    username: t.profiles?.username ?? "",
-                    slug: t.slug ?? "",
+                    id: `${t.profiles?.username}/${t.slug}`
                   }}
                   className={
                     "block truncate font-medium hover:underline " +
