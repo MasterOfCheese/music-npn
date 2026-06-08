@@ -369,7 +369,7 @@ function EditProfileDialog({
       .eq("id", profile.id);
     setSaving(false);
     if (error) {
-      toast.error(error.message.includes("duplicate") ? "Username taken" : error.message);
+      toast.error(error.code === "23505" ? "Username taken" : friendlyError(error, "Failed to update profile"));
       return;
     }
     toast.success("Profile updated");
