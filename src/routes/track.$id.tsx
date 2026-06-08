@@ -111,7 +111,7 @@ function TrackPage() {
   const repost = async () => {
     if (!user) return toast.error("Sign in to repost");
     const { error } = await supabase.from("reposts").insert({ track_id: track.id, user_id: user.id });
-    if (error && !error.message.includes("duplicate")) toast.error(error.message);
+    if (error && error.code !== "23505") toast.error(friendlyError(error, "Repost failed"));
     else toast.success("Reposted");
   };
 
