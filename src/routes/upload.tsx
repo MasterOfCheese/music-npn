@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errors";
 import { UploadCloud } from "lucide-react";
 
 export const Route = createFileRoute("/upload")({
