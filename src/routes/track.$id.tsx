@@ -130,7 +130,7 @@ function TrackPage() {
     if (!c) return;
     setComment("");
     const { error } = await supabase.from("comments").insert({ track_id: track.id, user_id: user.id, content: c });
-    if (error) toast.error(error.message);
+    if (error) toast.error(friendlyError(error, "Comment failed"));
   };
 
   return (
