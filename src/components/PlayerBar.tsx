@@ -27,6 +27,10 @@ export function PlayerBar() {
     setVolume,
     toggleMute,
     cycleRepeat,
+    next,
+    prev,
+    hasNext,
+    hasPrev,
   } = usePlayer();
   const [cover, setCover] = useState<string | null>(null);
 
