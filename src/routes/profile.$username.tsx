@@ -19,6 +19,7 @@ import {
   Globe,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errors";
 import { formatDistanceToNow } from "date-fns";
 
 
