@@ -242,7 +242,7 @@ function AlbumPage() {
               }
             >
               <button
-                onClick={() => (isCur ? toggle() : play(t))}
+                onClick={() => (isCur ? toggle() : playQueue(tracks, idx))}
                 className="grid place-items-center size-7 text-muted-foreground hover:text-primary"
                 aria-label="Play"
               >
