@@ -9,6 +9,7 @@ interface TrackRouteParams {
 
 export const Route = createFileRoute("/track/$username/$slug")({
   loader: async ({ params }: { params: TrackRouteParams }) => {
+    console.log("🟢 [track.$username.$slug.tsx] Loader called with:", params);
     const { username, slug } = params;
     
     // Fetch user profile
