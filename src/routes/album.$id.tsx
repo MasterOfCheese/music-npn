@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePlayer } from "@/lib/player-context";
 import { getSignedUrl } from "@/lib/storage";
+import { friendlyError } from "@/lib/errors";
 import { useEffect, useState } from "react";
 import {
   Play,
