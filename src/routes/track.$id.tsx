@@ -225,6 +225,9 @@ function TrackPage() {
     
     setIsLiking(true);
     
+    const previousLiked = likedByMe;
+    const previousCount = likesCount;
+
     try {
       // Optimistic update UI immediately
       const newLiked = !likedByMe;
