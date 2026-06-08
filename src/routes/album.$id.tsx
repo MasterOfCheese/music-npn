@@ -113,7 +113,7 @@ function AlbumPage() {
       qc.invalidateQueries({ queryKey: ["album", id] });
       toast.success("Removed from album");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(friendlyError(e, "Failed to remove track")),
   });
 
   const deleteAlbumMut = useMutation({
