@@ -87,7 +87,7 @@ function UploadPage() {
       toast.success("Track uploaded");
       navigate({ to: "/track/$id", params: { id: row.id } });
     } catch (err: any) {
-      toast.error(err?.message ?? "Upload failed");
+      toast.error(friendlyError(err, "Upload failed"));
     } finally {
       setBusy(false);
     }
