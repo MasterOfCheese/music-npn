@@ -89,7 +89,7 @@ export function AddToAlbumButton({ trackId, className }: Props) {
       qc.invalidateQueries({ queryKey: ["my-albums-picker"] });
       qc.invalidateQueries({ queryKey: ["user-albums"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(friendlyError(e, "Failed to create album")),
   });
 
   if (!user) return null;
