@@ -177,7 +177,7 @@ function Profile() {
   return (
     <div>
       {/* Banner — short SoundCloud-style hero with subtle pattern */}
-      <div className="h-32 sm:h-44 gradient-orange relative overflow-hidden">
+      {/* <div className="h-32 sm:h-44 gradient-orange relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-30 mix-blend-overlay"
           style={{
@@ -186,11 +186,11 @@ function Profile() {
           }}
         />
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background to-transparent" />
-      </div>
+      </div> */}
 
       <div className="mx-auto max-w-5xl px-4">
         {/* Header */}
-        <div className="-mt-14 sm:-mt-16 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+        <div className="mt-6 sm:mt-6 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
           <div className="size-28 sm:size-32 rounded-full border-4 border-background bg-card overflow-hidden gradient-orange grid place-items-center text-4xl font-bold text-primary-foreground shrink-0 play-shadow">
             {avatarSrc ? (
               <img src={avatarSrc} alt={profile.username} className="size-full object-cover" />
