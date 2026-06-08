@@ -127,7 +127,7 @@ function AlbumPage() {
       if (username) navigate({ to: "/profile/$username", params: { username } });
       else navigate({ to: "/" });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(friendlyError(e, "Failed to delete album")),
   });
 
   if (isLoading)
