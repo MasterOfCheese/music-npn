@@ -108,7 +108,7 @@ function Home() {
             .
           </div>
         )}
-        {data?.map((t) => <TrackCard key={t.id} track={t} />)}
+        {data?.map((t) => <TrackCard key={t.id} track={t} queue={data} />)}
         {filter === "following" && data?.length === 0 && (
           <p className="text-sm text-muted-foreground text-center">
             Follow creators to see their tracks here.

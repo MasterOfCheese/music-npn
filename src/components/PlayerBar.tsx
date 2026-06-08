@@ -27,6 +27,10 @@ export function PlayerBar() {
     setVolume,
     toggleMute,
     cycleRepeat,
+    next,
+    prev,
+    hasNext,
+    hasPrev,
   } = usePlayer();
   const [cover, setCover] = useState<string | null>(null);
 
@@ -68,7 +72,9 @@ export function PlayerBar() {
 
         <div className="flex items-center gap-2">
           <button
-            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground"
+            onClick={prev}
+            disabled={!hasPrev}
+            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground"
             aria-label="Previous"
           >
             <SkipBack size={18} />
@@ -81,7 +87,9 @@ export function PlayerBar() {
             {playing ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
           </button>
           <button
-            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground"
+            onClick={next}
+            disabled={!hasNext}
+            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground"
             aria-label="Next"
           >
             <SkipForward size={18} />

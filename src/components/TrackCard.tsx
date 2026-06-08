@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { getSignedUrl } from "@/lib/storage";
 
 
-export function TrackCard({ track }: { track: Track }) {
+export function TrackCard({ track, queue }: { track: Track; queue?: Track[] }) {
   const { current, playing, progress, play, toggle, seek } = usePlayer();
   const isCurrent = current?.id === track.id;
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function TrackCard({ track }: { track: Track }) {
           <img src={coverUrl} alt="" className="absolute inset-0 size-full object-cover" loading="lazy" />
         )}
         <button
-          onClick={() => (isCurrent ? toggle() : play(track))}
+          onClick={() => (isCurrent ? toggle() : play(track, queue))}
           aria-label={isCurrent && playing ? "Pause" : "Play"}
           className="absolute inset-0 grid place-items-center bg-black/30 opacity-0 group-hover:opacity-100 data-[active=true]:opacity-100 transition"
           data-active={isCurrent}
