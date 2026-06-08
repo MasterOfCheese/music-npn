@@ -153,20 +153,12 @@ export const Route = createFileRoute("/track/$id")({
 
 function TrackPage() {
   // Lấy data từ loader thay vì fetch lại
-  const { track: initialTrack } = Route.useLoaderData();
+  const { track } = Route.useLoaderData();
   const { user } = useAuth();
   const qc = useQueryClient();
   const { current, playing, progress, play, toggle, seek } = usePlayer();
   const [cover, setCover] = useState<string | null>(null);
   const [comment, setComment] = useState("");
-  
-  // State management for like/unlike (fix race condition)
-  const [likedByMe, setLikedByMe] = useState(initialTrack.liked_by_me);
-  const [likesCount, setLikesCount] = useState(initialTrack.likes_count);
-  const [isLiking, setIsLiking] = useState(false);
-  
-  // Track object updated with local state
-  const track = { ...initialTrack, liked_by_me: likedByMe, likes_count: likesCount };
 
   // Chỉ fetch comments, track đã có từ loader
   const { data: comments } = useQuery({ 
@@ -214,71 +206,23 @@ function TrackPage() {
 
   const isCurrent = current?.id === track.id;
 
-  // FIX: Optimistic update + disable button to prevent race condition
   const toggleLike = async () => {
     if (!user) {
       toast.error("Sign in to like");
       return;
     }
-    
-    if (isLiking) return; // Prevent double click
-    
-    setIsLiking(true);
-    
-    const previousLiked = likedByMe;
-    const previousCount = likesCount;
-
-    try {
-      // Optimistic update UI immediately
-      const newLiked = !likedByMe;
-      const previousLiked = likedByMe;
-      const previousCount = likesCount;
-      
-      setLikedByMe(newLiked);
-      setLikesCount(newLiked ? likesCount + 1 : likesCount - 1);
-
-      if (likedByMe) {
-        // Unlike
-        const { error } = await supabase
-          .from("likes")
-          .delete()
-          .eq("track_id", track.id)
-          .eq("user_id", user.id);
-        
-        if (error) throw error;
-      } else {
-        // Like
-        const { error } = await supabase
-          .from("likes")
-          .insert({ track_id: track.id, user_id: user.id });
-        
-        if (error) throw error;
-      }
-
-      // Invalidate cache to sync with server
-      qc.invalidateQueries({ queryKey: ["track", track.id] });
-    } catch (error) {
-      // Revert optimistic update if error
-      setLikedByMe(previousLiked);
-      setLikesCount(previousCount);
-      
-      const err = error as any;
-      // Ignore duplicate key error (23505) - already liked
-      if (err?.code === "23505") {
-        toast.error("Already liked this track");
-      } else {
-        toast.error("Failed to update like");
-      }
-    } finally {
-      setIsLiking(false);
+    if (track.liked_by_me) {
+      await supabase.from("likes").delete().eq("track_id", track.id).eq("user_id", user.id);
+    } else {
+      await supabase.from("likes").insert({ track_id: track.id, user_id: user.id });
     }
+    qc.invalidateQueries({ queryKey: ["track", track.id] });
   };
 
   const repost = async () => {
     if (!user) return toast.error("Sign in to repost");
     const { error } = await supabase.from("reposts").insert({ track_id: track.id, user_id: user.id });
     if (error && error.code !== "23505") toast.error(friendlyError(error, "Repost failed"));
-    else if (error?.code === "23505") toast.info("Already reposted");
     else toast.success("Reposted");
   };
 
@@ -346,11 +290,9 @@ function TrackPage() {
               </button>
               <button
                 onClick={toggleLike}
-                disabled={isLiking}
                 className={
-                  "inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:border-primary/50 transition " +
-                  (track.liked_by_me ? "text-primary border-primary/50" : "") +
-                  (isLiking ? " opacity-50 cursor-not-allowed" : "")
+                  "inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:border-primary/50 " +
+                  (track.liked_by_me ? "text-primary border-primary/50" : "")
                 }
               >
                 <Heart size={14} fill={track.liked_by_me ? "currentColor" : "none"} />
