@@ -9,6 +9,7 @@ import { Heart, MessageCircle, Pause, Play, Repeat2, Share2 } from "lucide-react
 import { toast } from "sonner";
 import type { Comment, Track } from "@/lib/types";
 import { getSignedUrl } from "@/lib/storage";
+import { friendlyError } from "@/lib/errors";
 import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/track/$id")({
