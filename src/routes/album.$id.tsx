@@ -17,15 +17,19 @@ import {
   Globe,
   X,
   Clock,
-
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import type { Track } from "@/lib/types";
 
+// Định nghĩa kiểu cho params
+type AlbumParams = {
+  id: string;
+};
+
 export const Route = createFileRoute("/album/$id")({
   component: AlbumPage,
-  head: ({ params }) => ({
+  head: ({ params }: { params: AlbumParams }) => ({  // <--- THÊM KIỂU CHO params
     meta: [
       { title: `Album — wavefeed` },
       { name: "description", content: `Listen to album ${params.id} on wavefeed.` },
@@ -34,7 +38,7 @@ export const Route = createFileRoute("/album/$id")({
 });
 
 const TRACK_COLS =
-  "id, user_id, title, description, audio_url, cover_url, duration, tags, plays_count, created_at, profiles!tracks_user_id_fkey(username, display_name, avatar_url)";
+  "id, user_id, title, description, audio_url, cover_url, duration, tags, plays_count, created_at, slug, profiles!tracks_user_id_fkey(username, display_name, avatar_url)";  // <--- THÊM slug
 
 async function fetchAlbum(id: string) {
   const { data: album, error } = await supabase
@@ -64,7 +68,6 @@ async function fetchAlbum(id: string) {
 
   return { album: { ...album, profiles: profile ?? null }, tracks };
 }
-
 
 function fmt(sec: number | null | undefined) {
   if (!sec) return "—";
@@ -141,7 +144,7 @@ function AlbumPage() {
   const { album, tracks } = data;
   const isOwn = user?.id === album.user_id;
   const firstTrack = tracks[0];
-  const currentInAlbum = current && tracks.some((t) => t.id === current.id);
+  const currentInAlbum = current && tracks.some((t: Track) => t.id === current.id);
   const isAlbumPlaying = currentInAlbum && playing;
 
   const playAll = () => {
@@ -231,7 +234,7 @@ function AlbumPage() {
             {isOwn && " Use the “Add to album” button on any track to add it here."}
           </div>
         )}
-        {tracks.map((t, idx) => {
+        {tracks.map((t: Track, idx: number) => {
           const isCur = current?.id === t.id;
           return (
             <div
@@ -256,9 +259,13 @@ function AlbumPage() {
                 )}
               </button>
               <div className="min-w-0">
+                {/* Đã sửa Link đến track với slug */}
                 <Link
-                  to="/track/$id"
-                  params={{ id: t.id }}
+                  to="/track/$username/$slug"
+                  params={{
+                    username: t.profiles?.username ?? "",
+                    slug: t.slug ?? "",
+                  }}
                   className={
                     "block truncate font-medium hover:underline " +
                     (isCur ? "text-primary" : "")

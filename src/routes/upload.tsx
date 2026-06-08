@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errors";
 import { UploadCloud } from "lucide-react";
+import { slugify, getUniqueSlug } from "@/lib/slugify";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({ meta: [{ title: "Upload — wavefeed" }] }),
@@ -64,6 +65,30 @@ function UploadPage() {
       }
       setProgress(80);
 
+      // ========== PHẦN THÊM MỚI: TẠO SLUG ==========
+      // 1. Lấy tất cả slug hiện có của user này
+      const { data: existingTracks, error: fetchError } = await supabase
+        .from("tracks")
+        .select("slug")
+        .eq("user_id", user.id);
+      
+      if (fetchError) {
+        console.error("Error fetching existing slugs:", fetchError);
+        // Vẫn tiếp tục nhưng sẽ báo lỗi nhẹ
+        toast.warning("Could not check for duplicate slugs");
+      }
+      
+      // 2. Tạo slug từ title
+      // const existingSlugs = existingTracks?.map(t => t.slug).filter(Boolean) || [];
+      const existingSlugs = existingTracks?.map((t: { slug: string | null }) => t.slug).filter(Boolean) || [];
+      let baseSlug = slugify(title.trim());
+      let finalSlug = getUniqueSlug(baseSlug, existingSlugs);
+      
+      // 3. Log để debug (có thể xóa sau)
+      console.log(`Generated slug: ${baseSlug} -> ${finalSlug}`);
+      // ========== KẾT THÚC PHẦN THÊM MỚI ==========
+
+      // 4. Insert track với slug đã tạo
       const { data: row, error: tErr } = await supabase
         .from("tracks")
         .insert({
@@ -73,20 +98,26 @@ function UploadPage() {
           audio_url: audioPath,
           cover_url: coverPath,
           duration,
+          slug: finalSlug, // <--- THÊM DÒNG NÀY
           tags: tags
             .split(",")
             .map((t) => t.trim().toLowerCase())
             .filter(Boolean)
             .slice(0, 10),
         })
-        .select("id")
+        .select("id, slug") // Cũng select slug để kiểm tra
         .single();
+      
       if (tErr) throw tErr;
 
       setProgress(100);
-      toast.success("Track uploaded");
+      toast.success(`Track uploaded! Slug: ${finalSlug}`);
+      
+      // 5. Chuyển hướng đến route với ID (giữ nguyên như cũ)
       navigate({ to: "/track/$id", params: { id: row.id } });
+      
     } catch (err: any) {
+      console.error("Upload error:", err);
       toast.error(friendlyError(err, "Upload failed"));
     } finally {
       setBusy(false);
@@ -135,6 +166,12 @@ function UploadPage() {
             onChange={(e) => setTitle(e.target.value)}
             className="w-full rounded-md bg-input border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
+          {/* Hiển thị slug preview khi người dùng nhập title */}
+          {title && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Slug: <span className="font-mono">{slugify(title)}</span>
+            </p>
+          )}
         </div>
 
         <div>

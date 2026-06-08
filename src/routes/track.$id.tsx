@@ -23,7 +23,7 @@ async function fetchTrack(id: string, uid?: string): Promise<Track> {
   const { data, error } = await supabase
     .from("tracks")
     .select(
-      "id, user_id, title, description, audio_url, cover_url, duration, tags, plays_count, created_at, profiles!tracks_user_id_fkey(username, display_name, avatar_url), likes(count)",
+      "id, user_id, title, description, audio_url, cover_url, duration, tags, plays_count, created_at, slug, profiles!tracks_user_id_fkey(username, display_name, avatar_url), likes(count)",
     )
     .eq("id", id)
     .maybeSingle();

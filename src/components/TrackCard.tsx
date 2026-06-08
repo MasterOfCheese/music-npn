@@ -56,8 +56,11 @@ export function TrackCard({ track, queue }: { track: Track; queue?: Track[] }) {
               {track.profiles?.display_name || track.profiles?.username || "Unknown"}
             </Link>
             <Link
-              to="/track/$id"
-              params={{ id: track.id }}
+              to="/track/$username/$slug"
+              params={{
+                username: track.profiles?.username ?? "",
+                slug: track.slug ?? "",
+              }}
               className="font-semibold text-foreground hover:text-primary truncate block"
             >
               {track.title}

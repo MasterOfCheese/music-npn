@@ -9,6 +9,7 @@ export type Track = {
   tags: string[] | null;
   plays_count: number;
   created_at: string;
+  slug?: string;
   profiles?: { username: string; display_name: string | null; avatar_url: string | null } | null;
   likes_count?: number;
   liked_by_me?: boolean;

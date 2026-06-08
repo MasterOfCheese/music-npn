@@ -58,8 +58,11 @@ export function PlayerBar() {
           </div>
           <div className="min-w-0">
             <Link
-              to="/track/$id"
-              params={{ id: current.id }}
+              to="/track/$username/$slug"
+              params={{
+                username: current.profiles?.username ?? "",
+                slug: current.slug ?? "",
+              }}
               className="block text-sm font-medium truncate hover:text-primary"
             >
               {current.title}
