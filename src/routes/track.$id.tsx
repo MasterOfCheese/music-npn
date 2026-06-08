@@ -12,11 +12,32 @@ import { getSignedUrl } from "@/lib/storage";
 import { friendlyError } from "@/lib/errors";
 import { formatDistanceToNow } from "date-fns";
 
+// export const Route = createFileRoute("/track/$id")({
+//   loader: async ({ params }) => {
+//     console.log("[track.$id.tsx] Loader called with id:", params.id);
+//   },
+//   component: TrackPage,
+//   notFoundComponent: () => (
+//     <div className="p-10 text-center text-muted-foreground">Track not found.</div>
+//   ),
+// });
+
 export const Route = createFileRoute("/track/$id")({
+  loader: async ({ params }) => {
+    console.log("🔴 [track.$id.tsx] Loader called with id:", params.id);
+    
+    // Nếu ID không phải UUID, chuyển tiếp cho route khác xử lý
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(params.id)) {
+      console.log("Not a UUID, redirecting to home");
+      throw redirect({ to: "/" });
+    }
+    
+    // Nếu là UUID, fetch bình thường
+    const track = await fetchTrack(params.id);
+    return { track };
+  },
   component: TrackPage,
-  notFoundComponent: () => (
-    <div className="p-10 text-center text-muted-foreground">Track not found.</div>
-  ),
 });
 
 async function fetchTrack(id: string, uid?: string): Promise<Track> {
