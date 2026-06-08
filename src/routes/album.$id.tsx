@@ -77,7 +77,7 @@ function AlbumPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { playQueue, toggle, current, playing } = usePlayer();
+  const { play, toggle, current, playing } = usePlayer();
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -146,7 +146,7 @@ function AlbumPage() {
 
   const playAll = () => {
     if (currentInAlbum) toggle();
-    else if (tracks.length) playQueue(tracks, 0);
+    else if (firstTrack) play(firstTrack);
   };
 
   return (
@@ -242,7 +242,7 @@ function AlbumPage() {
               }
             >
               <button
-                onClick={() => (isCur ? toggle() : playQueue(tracks, idx))}
+                onClick={() => (isCur ? toggle() : play(t))}
                 className="grid place-items-center size-7 text-muted-foreground hover:text-primary"
                 aria-label="Play"
               >

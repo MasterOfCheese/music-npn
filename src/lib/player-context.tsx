@@ -23,14 +23,7 @@ type PlayerCtx = {
   volume: number; // 0..1
   muted: boolean;
   repeat: RepeatMode;
-  queue: Track[];
-  queueIndex: number;
-  hasNext: boolean;
-  hasPrev: boolean;
   play: (track: Track) => Promise<void>;
-  playQueue: (tracks: Track[], startIndex?: number) => Promise<void>;
-  next: () => void;
-  prev: () => void;
   toggle: () => void;
   seek: (frac: number) => void;
   setVolume: (v: number) => void;
@@ -53,17 +46,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(1);
   const [muted, setMuted] = useState(false);
   const [repeat, setRepeat] = useState<RepeatMode>("off");
-  const [queue, setQueue] = useState<Track[]>([]);
-  const [queueIndex, setQueueIndex] = useState(-1);
   const countedRef = useRef<Set<string>>(new Set());
-  // Always-fresh refs so audio event handlers (bound once per track) read the
-  // latest queue/index/repeat instead of stale closure values.
-  const queueRef = useRef<Track[]>([]);
-  const queueIndexRef = useRef(-1);
-  const repeatRef = useRef<RepeatMode>("off");
-  useEffect(() => { queueRef.current = queue; }, [queue]);
-  useEffect(() => { queueIndexRef.current = queueIndex; }, [queueIndex]);
-  useEffect(() => { repeatRef.current = repeat; }, [repeat]);
 
   // Lazy create audio element (browser only)
   if (typeof window !== "undefined" && !audioRef.current) {
@@ -88,68 +71,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (r === "off" || r === "all" || r === "one") setRepeat(r);
   }, []);
 
-  // Internal playback primitive
-  const playTrack = useCallback(async (track: Track) => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (current?.id !== track.id) {
-      const url = await getSignedUrl("audio", track.audio_url);
-      a.src = url;
-      setCurrent(track);
-      setCurrentTime(0);
-    }
-    await a.play().catch(() => {});
-  }, [current]);
-
-  const playAtIndex = useCallback(async (idx: number) => {
-    const q = queueRef.current;
-    if (idx < 0 || idx >= q.length) return;
-    setQueueIndex(idx);
-    queueIndexRef.current = idx;
-    await playTrack(q[idx]);
-  }, [playTrack]);
-
-  const next = useCallback(() => {
-    const q = queueRef.current;
-    const i = queueIndexRef.current;
-    if (q.length === 0) return;
-    if (i < q.length - 1) {
-      void playAtIndex(i + 1);
-    } else if (repeatRef.current === "all") {
-      void playAtIndex(0);
-    }
-  }, [playAtIndex]);
-
-  const prev = useCallback(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    // SoundCloud-style: if >3s in, restart current; else go to previous
-    if (a.currentTime > 3) {
-      a.currentTime = 0;
-      return;
-    }
-    const q = queueRef.current;
-    const i = queueIndexRef.current;
-    if (q.length === 0) return;
-    if (i > 0) {
-      void playAtIndex(i - 1);
-    } else if (repeatRef.current === "all") {
-      void playAtIndex(q.length - 1);
-    } else {
-      a.currentTime = 0;
-    }
-  }, [playAtIndex]);
-
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     const onTime = () => {
       setCurrentTime(a.currentTime);
+      // Count a play once user has listened ≥30s (or full track if shorter)
       const trackId = current?.id;
       if (trackId && !countedRef.current.has(trackId)) {
         const threshold = Math.min(30, (a.duration || 30) * 0.5);
         if (a.currentTime >= threshold) {
           countedRef.current.add(trackId);
+          // Fire-and-forget; RPC is SECURITY DEFINER
           (supabase.rpc as any)("increment_track_plays", { _track_id: trackId }).then(
             ({ error }: { error: unknown }) => {
               if (error) {
@@ -167,17 +100,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const onPause = () => setPlaying(false);
     const onEnded = () => {
       setPlaying(false);
-      // repeat "one" is handled natively via a.loop, so ended won't fire
-      const q = queueRef.current;
-      const i = queueIndexRef.current;
-      if (q.length > 0 && i < q.length - 1) {
-        void playAtIndex(i + 1);
-      } else if (repeatRef.current === "all") {
-        if (q.length > 0) void playAtIndex(0);
-        else {
-          a.currentTime = 0;
-          a.play().catch(() => {});
-        }
+      if (repeat === "all") {
+        a.currentTime = 0;
+        a.play().catch(() => {});
       }
     };
     const onVol = () => {
@@ -198,7 +123,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       a.removeEventListener("ended", onEnded);
       a.removeEventListener("volumechange", onVol);
     };
-  }, [current?.id, playAtIndex]);
+  }, [current?.id, repeat]);
 
   // Reflect repeat mode onto element
   useEffect(() => {
@@ -210,36 +135,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const play = useCallback(
     async (track: Track) => {
-      // Single-track play: if it's already in the active queue, keep position;
-      // otherwise reset queue to just this track.
-      const q = queueRef.current;
-      const existingIdx = q.findIndex((t) => t.id === track.id);
-      if (existingIdx >= 0) {
-        setQueueIndex(existingIdx);
-        queueIndexRef.current = existingIdx;
-      } else {
-        const nq = [track];
-        setQueue(nq);
-        queueRef.current = nq;
-        setQueueIndex(0);
-        queueIndexRef.current = 0;
+      const a = audioRef.current;
+      if (!a) return;
+      if (current?.id !== track.id) {
+        const url = await getSignedUrl("audio", track.audio_url);
+        a.src = url;
+        setCurrent(track);
+        setCurrentTime(0);
       }
-      await playTrack(track);
+      await a.play().catch(() => {});
     },
-    [playTrack],
-  );
-
-  const playQueue = useCallback(
-    async (tracks: Track[], startIndex = 0) => {
-      if (tracks.length === 0) return;
-      const idx = Math.max(0, Math.min(tracks.length - 1, startIndex));
-      setQueue(tracks);
-      queueRef.current = tracks;
-      setQueueIndex(idx);
-      queueIndexRef.current = idx;
-      await playTrack(tracks[idx]);
-    },
-    [playTrack],
+    [current],
   );
 
   const toggle = useCallback(() => {
@@ -276,9 +182,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setRepeat((r) => (r === "off" ? "all" : r === "all" ? "one" : "off"));
   }, []);
 
-  const hasNext = queue.length > 0 && (queueIndex < queue.length - 1 || repeat === "all");
-  const hasPrev = queue.length > 0 && (queueIndex > 0 || repeat === "all" || currentTime > 3);
-
   const value = useMemo<PlayerCtx>(
     () => ({
       current,
@@ -289,14 +192,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       volume,
       muted,
       repeat,
-      queue,
-      queueIndex,
-      hasNext,
-      hasPrev,
       play,
-      playQueue,
-      next,
-      prev,
       toggle,
       seek,
       setVolume,
@@ -312,14 +208,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       volume,
       muted,
       repeat,
-      queue,
-      queueIndex,
-      hasNext,
-      hasPrev,
       play,
-      playQueue,
-      next,
-      prev,
       toggle,
       seek,
       setVolume,
