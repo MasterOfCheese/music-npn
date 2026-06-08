@@ -460,7 +460,7 @@ function AlbumsTabContent({
       .insert({ user_id: userId, title: title.trim(), is_public: isPublic });
     setSaving(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error, "Failed to create album"));
       return;
     }
     toast.success("Album created");
