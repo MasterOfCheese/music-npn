@@ -153,7 +153,7 @@ function Profile() {
     },
     onError: (e: any, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["profile", username, user?.id ?? null], ctx.prev);
-      toast.error(e?.message ?? "Failed");
+      toast.error(friendlyError(e, "Action failed"));
     },
     onSuccess: (_d, follow) => {
       toast.success(follow ? "Following" : "Unfollowed");
