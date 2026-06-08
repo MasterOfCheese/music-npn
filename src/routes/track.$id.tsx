@@ -12,35 +12,69 @@ import { getSignedUrl } from "@/lib/storage";
 import { friendlyError } from "@/lib/errors";
 import { formatDistanceToNow } from "date-fns";
 
-// export const Route = createFileRoute("/track/$id")({
-//   loader: async ({ params }) => {
-//     console.log("[track.$id.tsx] Loader called with id:", params.id);
-//   },
-//   component: TrackPage,
-//   notFoundComponent: () => (
-//     <div className="p-10 text-center text-muted-foreground">Track not found.</div>
-//   ),
-// });
+// Helper function để kiểm tra UUID
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
 
-export const Route = createFileRoute("/track/$id")({
-  loader: async ({ params }) => {
-    console.log("🔴 [track.$id.tsx] Loader called with id:", params.id);
-    
-    // Nếu ID không phải UUID, chuyển tiếp cho route khác xử lý
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(params.id)) {
-      console.log("Not a UUID, redirecting to home");
-      throw redirect({ to: "/" });
-    }
-    
-    // Nếu là UUID, fetch bình thường
-    const track = await fetchTrack(params.id);
-    return { track };
-  },
-  component: TrackPage,
-});
+// Helper function để fetch track từ username và slug
+async function fetchTrackByUsernameAndSlug(username: string, slug: string, uid?: string): Promise<Track | null> {
+  console.log("🔍 Fetching track by username/slug:", { username, slug });
+  
+  // Tìm user_id từ username
+  const { data: profile, error: userError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
+  
+  if (userError || !profile) {
+    console.error("User not found:", username);
+    return null;
+  }
+  
+  console.log("✅ Found user:", profile.id);
+  
+  // Tìm track từ user_id và slug
+  const { data: track, error: trackError } = await supabase
+    .from("tracks")
+    .select(
+      "id, user_id, title, description, audio_url, cover_url, duration, tags, plays_count, created_at, slug, profiles!tracks_user_id_fkey(username, display_name, avatar_url), likes(count)",
+    )
+    .eq("user_id", profile.id)
+    .eq("slug", slug)
+    .maybeSingle();
+  
+  if (trackError || !track) {
+    console.error("Track not found for user:", { username, slug });
+    return null;
+  }
+  
+  console.log("✅ Found track:", track.id, track.title);
+  
+  let liked = false;
+  if (uid && track.id) {
+    const { data: l } = await supabase
+      .from("likes")
+      .select("id")
+      .eq("track_id", track.id)
+      .eq("user_id", uid)
+      .maybeSingle();
+    liked = !!l;
+  }
+  
+  return { 
+    ...(track as any), 
+    likes_count: (track as any).likes?.[0]?.count ?? 0, 
+    liked_by_me: liked 
+  };
+}
 
+// Original fetchTrack function (giữ nguyên)
 async function fetchTrack(id: string, uid?: string): Promise<Track> {
+  console.log("🔍 Fetching track by UUID:", id);
+  
   const { data, error } = await supabase
     .from("tracks")
     .select(
@@ -48,8 +82,10 @@ async function fetchTrack(id: string, uid?: string): Promise<Track> {
     )
     .eq("id", id)
     .maybeSingle();
+  
   if (error) throw error;
   if (!data) throw notFound();
+  
   let liked = false;
   if (uid) {
     const { data: l } = await supabase
@@ -60,6 +96,7 @@ async function fetchTrack(id: string, uid?: string): Promise<Track> {
       .maybeSingle();
     liked = !!l;
   }
+  
   return { ...(data as any), likes_count: (data as any).likes?.[0]?.count ?? 0, liked_by_me: liked };
 }
 
@@ -74,22 +111,67 @@ async function fetchComments(id: string): Promise<Comment[]> {
   return (data ?? []) as any;
 }
 
+export const Route = createFileRoute("/track/$id")({
+  loader: async ({ params }) => {
+    const { id } = params;
+    console.log("🔴 [track.$id.tsx] Loader called with id:", id);
+    
+    // TRƯỜNG HỢP 1: URL dạng /track/username/slug (có chứa dấu /)
+    if (id.includes('/')) {
+      const [username, slug] = id.split('/');
+      console.log("📝 Detected username/slug format:", { username, slug });
+      
+      const track = await fetchTrackByUsernameAndSlug(username, slug);
+      if (track) {
+        console.log("✅ Found track, returning data");
+        return { track };
+      }
+      
+      console.log("❌ Track not found by username/slug");
+      throw notFound();
+    }
+    
+    // TRƯỜNG HỢP 2: URL dạng /track/uuid
+    if (isValidUUID(id)) {
+      console.log("📝 Detected UUID format:", id);
+      const track = await fetchTrack(id);
+      return { track };
+    }
+    
+    // TRƯỜNG HỢP 3: Không hợp lệ
+    console.log("❌ Invalid ID format:", id);
+    throw notFound();
+  },
+  component: TrackPage,
+  notFoundComponent: () => (
+    <div className="p-10 text-center text-muted-foreground">
+      <h2 className="text-xl font-semibold mb-2">Track not found</h2>
+      <p>The track or user you're looking for doesn't exist.</p>
+    </div>
+  ),
+});
+
 function TrackPage() {
-  const { id } = Route.useParams();
+  // Lấy data từ loader thay vì fetch lại
+  const { track } = Route.useLoaderData();
   const { user } = useAuth();
   const qc = useQueryClient();
   const { current, playing, progress, play, toggle, seek } = usePlayer();
-
-  const { data: track } = useQuery({ queryKey: ["track", id, user?.id], queryFn: () => fetchTrack(id, user?.id) });
-  const { data: comments } = useQuery({ queryKey: ["comments", id], queryFn: () => fetchComments(id) });
-
   const [cover, setCover] = useState<string | null>(null);
   const [comment, setComment] = useState("");
+
+  // Chỉ fetch comments, track đã có từ loader
+  const { data: comments } = useQuery({ 
+    queryKey: ["comments", track.id], 
+    queryFn: () => fetchComments(track.id) 
+  });
 
   useEffect(() => {
     let cancel = false;
     if (track?.cover_url) {
-      getSignedUrl("covers", track.cover_url).then((u) => !cancel && setCover(u)).catch(() => {});
+      getSignedUrl("covers", track.cover_url)
+        .then((u) => !cancel && setCover(u))
+        .catch(() => {});
     }
     return () => {
       cancel = true;
@@ -99,20 +181,28 @@ function TrackPage() {
   // Realtime comments
   useEffect(() => {
     const ch = supabase
-      .channel(`comments-${id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "comments", filter: `track_id=eq.${id}` }, () => {
-        qc.invalidateQueries({ queryKey: ["comments", id] });
+      .channel(`comments-${track.id}`)
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "comments", 
+        filter: `track_id=eq.${track.id}` 
+      }, () => {
+        qc.invalidateQueries({ queryKey: ["comments", track.id] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "likes", filter: `track_id=eq.${id}` }, () => {
-        qc.invalidateQueries({ queryKey: ["track", id] });
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "likes", 
+        filter: `track_id=eq.${track.id}` 
+      }, () => {
+        qc.invalidateQueries({ queryKey: ["track", track.id] });
       })
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [id, qc]);
-
-  if (!track) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
+  }, [track.id, qc]);
 
   const isCurrent = current?.id === track.id;
 
@@ -126,7 +216,7 @@ function TrackPage() {
     } else {
       await supabase.from("likes").insert({ track_id: track.id, user_id: user.id });
     }
-    qc.invalidateQueries({ queryKey: ["track", id] });
+    qc.invalidateQueries({ queryKey: ["track", track.id] });
   };
 
   const repost = async () => {
@@ -150,7 +240,11 @@ function TrackPage() {
     const c = comment.trim();
     if (!c) return;
     setComment("");
-    const { error } = await supabase.from("comments").insert({ track_id: track.id, user_id: user.id, content: c });
+    const { error } = await supabase.from("comments").insert({ 
+      track_id: track.id, 
+      user_id: user.id, 
+      content: c 
+    });
     if (error) toast.error(friendlyError(error, "Comment failed"));
   };
 
