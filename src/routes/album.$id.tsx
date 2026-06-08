@@ -146,7 +146,7 @@ function AlbumPage() {
 
   const playAll = () => {
     if (currentInAlbum) toggle();
-    else if (firstTrack) play(firstTrack);
+    else if (tracks.length) playQueue(tracks, 0);
   };
 
   return (
