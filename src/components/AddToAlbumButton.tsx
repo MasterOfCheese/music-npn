@@ -65,7 +65,7 @@ export function AddToAlbumButton({ trackId, className }: Props) {
       qc.invalidateQueries({ queryKey: ["album", vars.id] });
       qc.invalidateQueries({ queryKey: ["user-albums"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(friendlyError(e, "Failed to update album")),
   });
 
   const createMut = useMutation({
