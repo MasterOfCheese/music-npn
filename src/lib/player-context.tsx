@@ -23,7 +23,14 @@ type PlayerCtx = {
   volume: number; // 0..1
   muted: boolean;
   repeat: RepeatMode;
-  play: (track: Track) => Promise<void>;
+  queue: Track[];
+  queueIndex: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+  play: (track: Track, queue?: Track[]) => Promise<void>;
+  playQueue: (tracks: Track[], startIndex?: number) => Promise<void>;
+  next: () => void;
+  prev: () => void;
   toggle: () => void;
   seek: (frac: number) => void;
   setVolume: (v: number) => void;
@@ -46,6 +53,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(1);
   const [muted, setMuted] = useState(false);
   const [repeat, setRepeat] = useState<RepeatMode>("off");
+  const [queue, setQueue] = useState<Track[]>([]);
+  const [queueIndex, setQueueIndex] = useState(-1);
   const countedRef = useRef<Set<string>>(new Set());
 
   // Lazy create audio element (browser only)
@@ -71,18 +80,63 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (r === "off" || r === "all" || r === "one") setRepeat(r);
   }, []);
 
+  const playTrackAt = useCallback(async (q: Track[], idx: number) => {
+    const a = audioRef.current;
+    if (!a || idx < 0 || idx >= q.length) return;
+    const track = q[idx];
+    if (current?.id !== track.id) {
+      const url = await getSignedUrl("audio", track.audio_url);
+      a.src = url;
+      setCurrent(track);
+      setCurrentTime(0);
+    }
+    setQueueIndex(idx);
+    await a.play().catch(() => {});
+  }, [current]);
+
+  // keep latest refs for event handlers
+  const queueRef = useRef(queue);
+  const queueIndexRef = useRef(queueIndex);
+  const repeatRef = useRef(repeat);
+  useEffect(() => { queueRef.current = queue; }, [queue]);
+  useEffect(() => { queueIndexRef.current = queueIndex; }, [queueIndex]);
+  useEffect(() => { repeatRef.current = repeat; }, [repeat]);
+
+  const next = useCallback(() => {
+    const q = queueRef.current;
+    const i = queueIndexRef.current;
+    if (q.length === 0) return;
+    if (i + 1 < q.length) {
+      void playTrackAt(q, i + 1);
+    } else if (repeatRef.current === "all") {
+      void playTrackAt(q, 0);
+    }
+  }, [playTrackAt]);
+
+  const prev = useCallback(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.currentTime > 3) {
+      a.currentTime = 0;
+      return;
+    }
+    const q = queueRef.current;
+    const i = queueIndexRef.current;
+    if (q.length === 0) return;
+    if (i - 1 >= 0) void playTrackAt(q, i - 1);
+    else if (repeatRef.current === "all") void playTrackAt(q, q.length - 1);
+  }, [playTrackAt]);
+
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     const onTime = () => {
       setCurrentTime(a.currentTime);
-      // Count a play once user has listened ≥30s (or full track if shorter)
       const trackId = current?.id;
       if (trackId && !countedRef.current.has(trackId)) {
         const threshold = Math.min(30, (a.duration || 30) * 0.5);
         if (a.currentTime >= threshold) {
           countedRef.current.add(trackId);
-          // Fire-and-forget; RPC is SECURITY DEFINER
           (supabase.rpc as any)("increment_track_plays", { _track_id: trackId }).then(
             ({ error }: { error: unknown }) => {
               if (error) {
@@ -100,10 +154,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const onPause = () => setPlaying(false);
     const onEnded = () => {
       setPlaying(false);
-      if (repeat === "all") {
-        a.currentTime = 0;
-        a.play().catch(() => {});
-      }
+      // repeat one is handled by a.loop = true
+      next();
     };
     const onVol = () => {
       setVolumeState(a.volume);
@@ -123,7 +175,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       a.removeEventListener("ended", onEnded);
       a.removeEventListener("volumechange", onVol);
     };
-  }, [current?.id, repeat]);
+  }, [current?.id, next]);
 
   // Reflect repeat mode onto element
   useEffect(() => {
@@ -134,18 +186,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [repeat]);
 
   const play = useCallback(
-    async (track: Track) => {
-      const a = audioRef.current;
-      if (!a) return;
-      if (current?.id !== track.id) {
-        const url = await getSignedUrl("audio", track.audio_url);
-        a.src = url;
-        setCurrent(track);
-        setCurrentTime(0);
-      }
-      await a.play().catch(() => {});
+    async (track: Track, q?: Track[]) => {
+      const useQueue = q && q.length > 0 ? q : [track];
+      const idx = Math.max(0, useQueue.findIndex((t) => t.id === track.id));
+      setQueue(useQueue);
+      await playTrackAt(useQueue, idx);
     },
-    [current],
+    [playTrackAt],
+  );
+
+  const playQueue = useCallback(
+    async (tracks: Track[], startIndex = 0) => {
+      if (tracks.length === 0) return;
+      const idx = Math.max(0, Math.min(startIndex, tracks.length - 1));
+      setQueue(tracks);
+      await playTrackAt(tracks, idx);
+    },
+    [playTrackAt],
   );
 
   const toggle = useCallback(() => {
@@ -182,6 +239,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setRepeat((r) => (r === "off" ? "all" : r === "all" ? "one" : "off"));
   }, []);
 
+  const hasNext = queueIndex >= 0 && (queueIndex + 1 < queue.length || repeat === "all");
+  const hasPrev = queueIndex >= 0 && (queueIndex - 1 >= 0 || repeat === "all");
+
   const value = useMemo<PlayerCtx>(
     () => ({
       current,
@@ -192,7 +252,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       volume,
       muted,
       repeat,
+      queue,
+      queueIndex,
+      hasNext,
+      hasPrev,
       play,
+      playQueue,
+      next,
+      prev,
       toggle,
       seek,
       setVolume,
@@ -208,7 +275,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       volume,
       muted,
       repeat,
+      queue,
+      queueIndex,
+      hasNext,
+      hasPrev,
       play,
+      playQueue,
+      next,
+      prev,
       toggle,
       seek,
       setVolume,
