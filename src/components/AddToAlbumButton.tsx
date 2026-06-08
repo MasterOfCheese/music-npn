@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { ListPlus, Plus, Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errors";
 
 type Props = {
   trackId: string;
@@ -64,7 +65,7 @@ export function AddToAlbumButton({ trackId, className }: Props) {
       qc.invalidateQueries({ queryKey: ["album", vars.id] });
       qc.invalidateQueries({ queryKey: ["user-albums"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(friendlyError(e, "Failed to update album")),
   });
 
   const createMut = useMutation({
@@ -88,7 +89,7 @@ export function AddToAlbumButton({ trackId, className }: Props) {
       qc.invalidateQueries({ queryKey: ["my-albums-picker"] });
       qc.invalidateQueries({ queryKey: ["user-albums"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(friendlyError(e, "Failed to create album")),
   });
 
   if (!user) return null;

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errors";
 import { UploadCloud } from "lucide-react";
 
 export const Route = createFileRoute("/upload")({
@@ -86,7 +87,7 @@ function UploadPage() {
       toast.success("Track uploaded");
       navigate({ to: "/track/$id", params: { id: row.id } });
     } catch (err: any) {
-      toast.error(err?.message ?? "Upload failed");
+      toast.error(friendlyError(err, "Upload failed"));
     } finally {
       setBusy(false);
     }

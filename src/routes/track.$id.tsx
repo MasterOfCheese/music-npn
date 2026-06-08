@@ -9,6 +9,7 @@ import { Heart, MessageCircle, Pause, Play, Repeat2, Share2 } from "lucide-react
 import { toast } from "sonner";
 import type { Comment, Track } from "@/lib/types";
 import { getSignedUrl } from "@/lib/storage";
+import { friendlyError } from "@/lib/errors";
 import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/track/$id")({
@@ -110,7 +111,7 @@ function TrackPage() {
   const repost = async () => {
     if (!user) return toast.error("Sign in to repost");
     const { error } = await supabase.from("reposts").insert({ track_id: track.id, user_id: user.id });
-    if (error && !error.message.includes("duplicate")) toast.error(error.message);
+    if (error && error.code !== "23505") toast.error(friendlyError(error, "Repost failed"));
     else toast.success("Reposted");
   };
 
@@ -129,7 +130,7 @@ function TrackPage() {
     if (!c) return;
     setComment("");
     const { error } = await supabase.from("comments").insert({ track_id: track.id, user_id: user.id, content: c });
-    if (error) toast.error(error.message);
+    if (error) toast.error(friendlyError(error, "Comment failed"));
   };
 
   return (

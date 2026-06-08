@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePlayer } from "@/lib/player-context";
 import { getSignedUrl } from "@/lib/storage";
+import { friendlyError } from "@/lib/errors";
 import { useEffect, useState } from "react";
 import {
   Play,
@@ -112,7 +113,7 @@ function AlbumPage() {
       qc.invalidateQueries({ queryKey: ["album", id] });
       toast.success("Removed from album");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(friendlyError(e, "Failed to remove track")),
   });
 
   const deleteAlbumMut = useMutation({
@@ -126,7 +127,7 @@ function AlbumPage() {
       if (username) navigate({ to: "/profile/$username", params: { username } });
       else navigate({ to: "/" });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => toast.error(friendlyError(e, "Failed to delete album")),
   });
 
   if (isLoading)
@@ -344,7 +345,7 @@ function EditAlbumDialog({
       .eq("id", album.id);
     setSaving(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error, "Failed to update album"));
       return;
     }
     toast.success("Album updated");

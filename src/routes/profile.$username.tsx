@@ -19,6 +19,7 @@ import {
   Globe,
 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errors";
 import { formatDistanceToNow } from "date-fns";
 
 
@@ -152,7 +153,7 @@ function Profile() {
     },
     onError: (e: any, _v, ctx) => {
       if (ctx?.prev) qc.setQueryData(["profile", username, user?.id ?? null], ctx.prev);
-      toast.error(e?.message ?? "Failed");
+      toast.error(friendlyError(e, "Action failed"));
     },
     onSuccess: (_d, follow) => {
       toast.success(follow ? "Following" : "Unfollowed");
@@ -368,7 +369,7 @@ function EditProfileDialog({
       .eq("id", profile.id);
     setSaving(false);
     if (error) {
-      toast.error(error.message.includes("duplicate") ? "Username taken" : error.message);
+      toast.error(error.code === "23505" ? "Username taken" : friendlyError(error, "Failed to update profile"));
       return;
     }
     toast.success("Profile updated");
@@ -459,7 +460,7 @@ function AlbumsTabContent({
       .insert({ user_id: userId, title: title.trim(), is_public: isPublic });
     setSaving(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error, "Failed to create album"));
       return;
     }
     toast.success("Album created");
