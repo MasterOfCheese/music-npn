@@ -345,7 +345,7 @@ function EditAlbumDialog({
       .eq("id", album.id);
     setSaving(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error, "Failed to update album"));
       return;
     }
     toast.success("Album updated");
