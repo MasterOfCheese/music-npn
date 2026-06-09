@@ -49,18 +49,64 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
   }
+
+  /* Định nghĩa các class border sử dụng CSS variables */
+  .border-border {
+    border-color: hsl(var(--border));
+  }
+  
+  .bg-background {
+    background-color: hsl(var(--background));
+  }
+  
+  .bg-card {
+    background-color: hsl(var(--card));
+  }
+  
+  .text-foreground {
+    color: hsl(var(--foreground));
+  }
+  
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground));
+  }
+  
+  .bg-primary {
+    background-color: hsl(var(--primary));
+  }
+  
+  .text-primary-foreground {
+    color: hsl(var(--primary-foreground));
+  }
+  
+  .bg-secondary {
+    background-color: hsl(var(--secondary));
+  }
+  
+  .bg-muted {
+    background-color: hsl(var(--muted));
+  }
+  
+  .bg-accent {
+    background-color: hsl(var(--accent));
+  }
+  
+  .border-border {
+    border-color: hsl(var(--border));
+  }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 
-/* Custom scrollbar hide utility */
+/* Custom utilities */
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -70,64 +116,11 @@
     display: none;
   }
   
-  /* Responsive container */
-  .container {
-    @apply px-4 mx-auto;
-    max-width: 100%;
+  .gradient-orange {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   }
   
-  @screen sm {
-    .container {
-      max-width: 640px;
-    }
+  .play-shadow {
+    box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.39);
   }
-  
-  @screen md {
-    .container {
-      max-width: 768px;
-    }
-  }
-  
-  @screen lg {
-    .container {
-      max-width: 1024px;
-    }
-  }
-  
-  @screen xl {
-    .container {
-      max-width: 1280px;
-    }
-  }
-}
-
-/* Gradient orange utility */
-.gradient-orange {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-}
-
-/* Play button shadow */
-.play-shadow {
-  box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.39);
-}
-
-/* Audio waveform container */
-.waveform-container {
-  @apply w-full cursor-pointer;
-}
-
-/* Sidebar custom styles */
-.sidebar-trigger {
-  @apply hover:bg-accent hover:text-accent-foreground;
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
