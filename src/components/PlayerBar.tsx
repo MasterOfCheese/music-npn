@@ -50,87 +50,80 @@ export function PlayerBar() {
   if (!current) return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-md">
-      <div className="mx-auto max-w-6xl px-2 sm:px-4 h-16 sm:h-20 flex items-center gap-2 sm:gap-4">
-        {/* Track info - ẩn trên mobile, hiện từ sm trở lên */}
-        <div className="flex items-center gap-2 sm:gap-3 w-40 sm:w-56 shrink-0">
-          <div className="size-10 sm:size-12 rounded-md gradient-orange overflow-hidden shrink-0">
+    <div className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-md">
+      <div className="mx-auto max-w-6xl px-4 h-20 flex items-center gap-4">
+        <div className="flex items-center gap-3 w-56 shrink-0">
+          <div className="size-12 rounded-md gradient-orange overflow-hidden shrink-0">
             {cover && <img src={cover} alt="" className="size-full object-cover" />}
           </div>
-          <div className="min-w-0 hidden sm:block">  {/* Chỉ hiện từ sm trở lên */}
+          <div className="min-w-0">
             <Link
               to="/track/$id"
               params={{
                 id: `${current.profiles?.username}/${current.slug}`
               }}
-              className="block text-xs sm:text-sm font-medium truncate hover:text-primary"
+              className="block text-sm font-medium truncate hover:text-primary"
             >
               {current.title}
             </Link>
-            <div className="text-xs text-muted-foreground truncate hidden md:block">  {/* Ẩn trên tablet */}
+            <div className="text-xs text-muted-foreground truncate">
               {current.profiles?.display_name || current.profiles?.username || "Unknown"}
             </div>
           </div>
         </div>
 
-        {/* Time display - ẩn trên mobile */}
-        <span className="text-xs tabular-nums text-muted-foreground w-8 sm:w-10 text-right hidden sm:block">
-          {fmt(currentTime)}
-        </span>
-
-        {/* Playback controls */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-2">
           <button
             onClick={prev}
             disabled={!hasPrev}
-            className="size-7 sm:size-8 grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground"
             aria-label="Previous"
           >
-            <SkipBack size={16} className="sm:size-[18px]" />
+            <SkipBack size={18} />
           </button>
           <button
             onClick={toggle}
-            className="size-8 sm:size-10 rounded-full bg-primary text-primary-foreground grid place-items-center play-shadow hover:scale-105 transition-transform"
+            className="size-10 rounded-full bg-primary text-primary-foreground grid place-items-center play-shadow hover:scale-105 transition-transform"
             aria-label={playing ? "Pause" : "Play"}
           >
-            {playing ? <Pause size={16} className="sm:size-[18px]" /> : <Play size={16} className="ml-0.5 sm:size-[18px]" />}
+            {playing ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
           </button>
           <button
             onClick={next}
             disabled={!hasNext}
-            className="size-7 sm:size-8 grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground"
             aria-label="Next"
           >
-            <SkipForward size={16} className="sm:size-[18px]" />
+            <SkipForward size={18} />
           </button>
         </div>
 
-        {/* Progress */}
-        <div className="flex-1 flex items-center gap-1 sm:gap-3 min-w-0">
-          <span className="text-xs tabular-nums text-muted-foreground w-8 sm:w-10 text-right hidden sm:block">
+        <div className="flex-1 flex items-center gap-3 min-w-0">
+          <span className="text-xs tabular-nums text-muted-foreground w-10 text-right">
             {fmt(currentTime)}
           </span>
           <div className="flex-1">
-            <Waveform seed={current.id} progress={progress} onSeek={seek} height={32} bars={80} />
+            <Waveform seed={current.id} progress={progress} onSeek={seek} height={36} bars={140} />
           </div>
-          <span className="text-xs tabular-nums text-muted-foreground w-8 sm:w-10 hidden sm:block">{fmt(duration)}</span>
+          <span className="text-xs tabular-nums text-muted-foreground w-10">{fmt(duration)}</span>
         </div>
 
-        {/* Volume - ẩn trên mobile */}
         <div className="hidden md:flex items-center gap-2 w-48 shrink-0 justify-end">
           <button
             onClick={cycleRepeat}
             className={
-              "size-8 grid place-items-center hover:text-foreground transition-colors " +
+              "size-8 grid place-items-center hover:text-foreground transition " +
               (repeat === "off" ? "text-muted-foreground" : "text-primary")
             }
             aria-label={`Repeat: ${repeat}`}
+            title={`Repeat: ${repeat}`}
           >
             {repeat === "one" ? <Repeat1 size={18} /> : <Repeat size={18} />}
           </button>
           <button
             onClick={toggleMute}
-            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground transition-colors"
+            className="size-8 grid place-items-center text-muted-foreground hover:text-foreground"
+            aria-label={muted ? "Unmute" : "Mute"}
           >
             {muted || volume === 0 ? (
               <VolumeX size={18} />

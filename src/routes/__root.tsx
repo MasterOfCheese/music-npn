@@ -14,7 +14,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
 import { PlayerProvider } from "@/lib/player-context";
 import { AppShell } from "@/components/AppShell";
-import "@/index.css";
 
 function NotFoundComponent() {
   return (

@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { PlayerBar } from "./PlayerBar";
-import { ThemeToggle } from "@/components/ThemeToggle";
-
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
@@ -65,7 +63,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </nav>
           <div className="flex-1" />
-          <ThemeToggle />
           <Link
             to="/upload"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"

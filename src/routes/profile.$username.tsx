@@ -27,8 +27,8 @@ export const Route = createFileRoute("/profile/$username")({
   component: Profile,
   head: ({ params }) => ({
     meta: [
-      { title: `@${params.username} — wavefeed` },
-      { name: "description", content: `Listen to tracks by @${params.username} on wavefeed.` },
+      { title: `@${params.username} — MusicNPN` },
+      { name: "description", content: `Listen to tracks by @${params.username} on MusicNPN.` },
     ],
   }),
 });
@@ -190,25 +190,25 @@ function Profile() {
 
       <div className="mx-auto max-w-5xl px-4">
         {/* Header */}
-        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
-          <div className="size-20 sm:size-28 md:size-32 rounded-full border-4 border-background bg-card overflow-hidden gradient-orange grid place-items-center text-3xl sm:text-4xl font-bold text-primary-foreground shrink-0 play-shadow mx-auto sm:mx-0">
+        <div className="mt-6 sm:mt-6 flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+          <div className="size-28 sm:size-32 rounded-full border-4 border-background bg-card overflow-hidden gradient-orange grid place-items-center text-4xl font-bold text-primary-foreground shrink-0 play-shadow">
             {avatarSrc ? (
               <img src={avatarSrc} alt={profile.username} className="size-full object-cover" />
             ) : (
               (profile.username[0] ?? "?").toUpperCase()
             )}
           </div>
-          <div className="flex-1 min-w-0 text-center sm:text-left">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">
+          <div className="flex-1 min-w-0 pb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold truncate">
               {profile.display_name || profile.username}
             </h1>
             <div className="text-sm text-muted-foreground">@{profile.username}</div>
-            <div className="mt-1 flex items-center justify-center sm:justify-start gap-1 text-xs text-muted-foreground">
+            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
               <CalendarDays size={12} />
               Joined {formatDistanceToNow(new Date(profile.created_at), { addSuffix: true })}
             </div>
           </div>
-          <div className="flex justify-center sm:justify-start">
+          <div className="pb-2 flex gap-2">
             {isOwn ? (
               <button
                 onClick={() => setEditing(true)}
@@ -273,29 +273,26 @@ function Profile() {
         )}
 
         {/* Tabs */}
-        <div className="mt-8 border-b border-border">
-          <div className="flex items-center gap-1 overflow-x-auto overflow-y-hidden scrollbar-hide">
-            {([
-              ["tracks", "Tracks", Music2],
-              ["albums", "Albums", ListMusic],
-              ["likes", "Likes", Heart],
-              ["reposts", "Reposts", Repeat2],
-            ] as const).map(([k, label, Icon]) => (
-              <button
-                key={k}
-                onClick={() => setTab(k)}
-                className={
-                  "inline-flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-sm border-b-2 -mb-px transition whitespace-nowrap shrink-0 " +
-                  (tab === k
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground")
-                }
-              >
-                <Icon size={14} /> 
-                <span className="hidden sm:inline">{label}</span>  {/* Ẩn text trên mobile */}
-              </button>
-            ))}
-          </div>
+        <div className="mt-8 border-b border-border flex items-center gap-1 overflow-x-auto">
+          {([
+            ["tracks", "Tracks", Music2],
+            ["albums", "Albums", ListMusic],
+            ["likes", "Likes", Heart],
+            ["reposts", "Reposts", Repeat2],
+          ] as const).map(([k, label, Icon]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={
+                "inline-flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 -mb-px transition whitespace-nowrap " +
+                (tab === k
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground")
+              }
+            >
+              <Icon size={14} /> {label}
+            </button>
+          ))}
         </div>
 
         {/* Tab content */}
