@@ -13,14 +13,14 @@ export function TrackCard({ track, queue }: { track: Track; queue?: Track[] }) {
   const isCurrent = current?.id === track.id;
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
-  console.log("🐛 TrackCard Debug:", {
-    id: track.id,
-    title: track.title,
-    username: track.profiles?.username,
-    slug: track.slug,
-    hasSlug: !!track.slug,
-    fullUrl: `/track/${track.profiles?.username}/${track.slug}`
-  });
+  // console.log("🐛 TrackCard Debug:", {
+  //   id: track.id,
+  //   title: track.title,
+  //   username: track.profiles?.username,
+  //   slug: track.slug,
+  //   hasSlug: !!track.slug,
+  //   fullUrl: `/track/${track.profiles?.username}/${track.slug}`
+  // });
 
   useEffect(() => {
     let cancel = false;

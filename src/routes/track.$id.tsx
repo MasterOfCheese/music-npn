@@ -20,7 +20,7 @@ function isValidUUID(uuid: string): boolean {
 
 // Helper function để fetch track từ username và slug
 async function fetchTrackByUsernameAndSlug(username: string, slug: string, uid?: string): Promise<Track | null> {
-  console.log("🔍 Fetching track by username/slug:", { username, slug });
+  // console.log("🔍 Fetching track by username/slug:", { username, slug });
   
   // Tìm user_id từ username
   const { data: profile, error: userError } = await supabase
@@ -34,7 +34,7 @@ async function fetchTrackByUsernameAndSlug(username: string, slug: string, uid?:
     return null;
   }
   
-  console.log("✅ Found user:", profile.id);
+  // console.log("✅ Found user:", profile.id);
   
   // Tìm track từ user_id và slug
   const { data: track, error: trackError } = await supabase
@@ -51,7 +51,7 @@ async function fetchTrackByUsernameAndSlug(username: string, slug: string, uid?:
     return null;
   }
   
-  console.log("✅ Found track:", track.id, track.title);
+  // console.log("✅ Found track:", track.id, track.title);
   
   let liked = false;
   if (uid && track.id) {
@@ -114,32 +114,32 @@ async function fetchComments(id: string): Promise<Comment[]> {
 export const Route = createFileRoute("/track/$id")({
   loader: async ({ params }) => {
     const { id } = params;
-    console.log("🔴 [track.$id.tsx] Loader called with id:", id);
+    // console.log("🔴 [track.$id.tsx] Loader called with id:", id);
     
     // TRƯỜNG HỢP 1: URL dạng /track/username/slug (có chứa dấu /)
     if (id.includes('/')) {
       const [username, slug] = id.split('/');
-      console.log("📝 Detected username/slug format:", { username, slug });
+      // console.log("📝 Detected username/slug format:", { username, slug });
       
       const track = await fetchTrackByUsernameAndSlug(username, slug);
       if (track) {
-        console.log("✅ Found track, returning data");
+        // console.log("✅ Found track, returning data");
         return { track };
       }
       
-      console.log("❌ Track not found by username/slug");
+      console.log("Track not found by username/slug");
       throw notFound();
     }
     
     // TRƯỜNG HỢP 2: URL dạng /track/uuid
     if (isValidUUID(id)) {
-      console.log("📝 Detected UUID format:", id);
+      // console.log("📝 Detected UUID format:", id);
       const track = await fetchTrack(id);
       return { track };
     }
     
     // TRƯỜNG HỢP 3: Không hợp lệ
-    console.log("❌ Invalid ID format:", id);
+    console.log("Invalid ID format:", id);
     throw notFound();
   },
   component: TrackPage,
