@@ -80,7 +80,7 @@ function UploadPage() {
       
       // 2. Tạo slug từ title
       // const existingSlugs = existingTracks?.map(t => t.slug).filter(Boolean) || [];
-      const existingSlugs = existingTracks?.map((t: { slug: string | null }) => t.slug).filter(Boolean) || [];
+      const existingSlugs = (existingTracks?.map((t: { slug: string | null }) => t.slug).filter(Boolean) as string[]) || [];
       let baseSlug = slugify(title.trim());
       let finalSlug = getUniqueSlug(baseSlug, existingSlugs);
       
