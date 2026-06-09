@@ -162,6 +162,8 @@ function TrackPage() {
   const [likesCount, setLikesCount] = useState<number>(track.likes_count ?? 0);
   const [liked, setLiked] = useState<boolean>(!!track.liked_by_me);
   const [likeBusy, setLikeBusy] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [repostBusy, setRepostBusy] = useState(false);
 
   // Chỉ fetch comments, track đã có từ loader
   const { data: comments } = useQuery({ 
