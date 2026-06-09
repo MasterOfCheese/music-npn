@@ -8,7 +8,7 @@ import { UploadCloud } from "lucide-react";
 import { slugify, getUniqueSlug } from "@/lib/slugify";
 
 export const Route = createFileRoute("/upload")({
-  head: () => ({ meta: [{ title: "Upload — wavefeed" }] }),
+  head: () => ({ meta: [{ title: "Upload — MusicNPN" }] }),
   component: UploadPage,
 });
 

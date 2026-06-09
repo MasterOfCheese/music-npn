@@ -27,8 +27,8 @@ export const Route = createFileRoute("/profile/$username")({
   component: Profile,
   head: ({ params }) => ({
     meta: [
-      { title: `@${params.username} — wavefeed` },
-      { name: "description", content: `Listen to tracks by @${params.username} on wavefeed.` },
+      { title: `@${params.username} — MusicNPN` },
+      { name: "description", content: `Listen to tracks by @${params.username} on MusicNPN.` },
     ],
   }),
 });

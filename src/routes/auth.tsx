@@ -9,8 +9,8 @@ import { Music2 } from "lucide-react";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — wavefeed" },
-      { name: "description", content: "Sign in or create your wavefeed account." },
+      { title: "Sign in — MusicNPN" },
+      { name: "description", content: "Sign in or create your MusicNPN account." },
     ],
   }),
   component: AuthPage,
@@ -77,7 +77,7 @@ function AuthPage() {
         </div>
         <h1 className="text-2xl font-bold">{mode === "signin" ? "Sign in" : "Create account"}</h1>
         <p className="text-sm text-muted-foreground">
-          {mode === "signin" ? "Welcome back to wavefeed." : "Start sharing your sound."}
+          {mode === "signin" ? "Welcome back to MusicNPN." : "Start sharing your sound."}
         </p>
       </div>
 

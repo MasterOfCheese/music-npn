@@ -31,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="grid place-items-center size-7 rounded gradient-orange play-shadow">
               <Music2 size={16} className="text-primary-foreground" />
             </span>
-            <span>wavefeed</span>
+            <span>MusicNPN</span>
           </Link>
           <nav className="flex items-center gap-1 text-sm">
             <Link

@@ -31,8 +31,8 @@ export const Route = createFileRoute("/album/$id")({
   component: AlbumPage,
   head: ({ params }: { params: AlbumParams }) => ({  // <--- THÊM KIỂU CHO params
     meta: [
-      { title: `Album — wavefeed` },
-      { name: "description", content: `Listen to album ${params.id} on wavefeed.` },
+      { title: `Album — MusicNPN` },
+      { name: "description", content: `Listen to album ${params.id} on MusicNPN.` },
     ],
   }),
 });

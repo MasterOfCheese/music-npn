@@ -7,7 +7,7 @@ import type { Track } from "@/lib/types";
 import { Search } from "lucide-react";
 
 export const Route = createFileRoute("/explore")({
-  head: () => ({ meta: [{ title: "Explore — wavefeed" }] }),
+  head: () => ({ meta: [{ title: "Explore — MusicNPN" }] }),
   component: Explore,
 });
 
