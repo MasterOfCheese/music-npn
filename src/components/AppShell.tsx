@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Upload, LogIn, LogOut, User } from "lucide-react";
+import { Upload, LogIn, LogOut, Music2, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -7,41 +7,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { PlayerBar } from "./PlayerBar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
   const [username, setUsername] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
       setUsername(null);
-      setAvatarUrl(null);
-      setDisplayName(null);
       return;
     }
-    
     supabase
       .from("profiles")
-      .select("username, avatar_url, display_name")
+      .select("username")
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data }) => {
-        setUsername(data?.username ?? null);
-        setAvatarUrl(data?.avatar_url ?? null);
-        setDisplayName(data?.display_name ?? null);
-      });
+      .then(({ data }) => setUsername(data?.username ?? null));
   }, [user]);
-
-  // Kiểm tra avatar có phải URL hợp lệ không
-  const isValidAvatar = avatarUrl && /^https?:\/\//.test(avatarUrl);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center gap-6">
-          {/* Logo */}
-          <Link to="/" title="Home" className="flex items-center gap-2 shrink-0">
+          <Link to="/" title="Home" className="flex items-center gap-2">
             <div className="text-primary hover:text-primary/80 transition-colors">
               <svg 
                 viewBox="0 0 143 64" 
@@ -57,8 +45,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               </svg>
             </div>
           </Link>
-
-          {/* Navigation */}
           <nav className="flex items-center gap-1 text-sm">
             <Link
               to="/"
@@ -78,63 +64,37 @@ export function AppShell({ children }: { children: ReactNode }) {
               Explore
             </Link>
           </nav>
-
           <div className="flex-1" />
-
-          {/* Theme Toggle */}
           <ThemeToggle />
-
-          {/* Upload button */}
           <Link
             to="/upload"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
           >
             <Upload size={14} /> Upload
           </Link>
-
-          {/* User section - hiển thị avatar + tên */}
           {user ? (
-            <div className="flex items-center gap-3">
-              {/* Profile link với avatar và tên */}
+            <>
               {username && (
                 <Link
                   to="/profile/$username"
                   params={{ username }}
-                  className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-accent transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground"
                 >
-                  {/* Avatar */}
-                  {isValidAvatar ? (
-                    <img 
-                      src={avatarUrl} 
-                      alt={displayName || username}
-                      className="size-7 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="size-7 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white text-xs font-medium">
-                      {(displayName?.[0] || username[0] || "U").toUpperCase()}
-                    </div>
-                  )}
-                  {/* Tên hiển thị */}
-                  <span className="text-sm font-medium text-foreground hidden md:inline">
-                    {displayName || username}
-                  </span>
+                  <User size={14} /> <span className="hidden sm:inline">Profile</span>
                 </Link>
               )}
-              
-              {/* Sign out button */}
               <button
                 onClick={signOut}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground"
                 aria-label="Sign out"
               >
-                <LogOut size={14} /> 
-                <span className="hidden sm:inline">Sign out</span>
+                <LogOut size={14} /> <span className="hidden sm:inline">Sign out</span>
               </button>
-            </div>
+            </>
           ) : (
             <Link
               to="/auth"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border border-border hover:border-primary/50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border border-border hover:border-primary/50"
             >
               <LogIn size={14} /> Sign in
             </Link>
