@@ -12,7 +12,7 @@ type Filter = "trending" | "new" | "following";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Feed — wavefeed" },
+      { title: "MusicNPN" },
       { name: "description", content: "Discover new music from creators around the world." },
     ],
   }),
