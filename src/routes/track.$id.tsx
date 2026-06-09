@@ -159,12 +159,40 @@ function TrackPage() {
   const { current, playing, progress, play, toggle, seek } = usePlayer();
   const [cover, setCover] = useState<string | null>(null);
   const [comment, setComment] = useState("");
+  const [likesCount, setLikesCount] = useState<number>(track.likes_count ?? 0);
+  const [liked, setLiked] = useState<boolean>(!!track.liked_by_me);
+  const [likeBusy, setLikeBusy] = useState(false);
 
   // Chỉ fetch comments, track đã có từ loader
   const { data: comments } = useQuery({ 
     queryKey: ["comments", track.id], 
     queryFn: () => fetchComments(track.id) 
   });
+
+  // Sync like state khi user thay đổi (loader chạy không có uid)
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      const { count } = await supabase
+        .from("likes")
+        .select("id", { count: "exact", head: true })
+        .eq("track_id", track.id);
+      if (!cancel && typeof count === "number") setLikesCount(count);
+
+      if (user) {
+        const { data } = await supabase
+          .from("likes")
+          .select("id")
+          .eq("track_id", track.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (!cancel) setLiked(!!data);
+      } else if (!cancel) {
+        setLiked(false);
+      }
+    })();
+    return () => { cancel = true; };
+  }, [track.id, user?.id]);
 
   useEffect(() => {
     let cancel = false;
@@ -178,31 +206,41 @@ function TrackPage() {
     };
   }, [track?.cover_url]);
 
-  // Realtime comments
+  // Realtime comments + likes
   useEffect(() => {
     const ch = supabase
-      .channel(`comments-${track.id}`)
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "comments", 
-        filter: `track_id=eq.${track.id}` 
+      .channel(`track-${track.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "comments",
+        filter: `track_id=eq.${track.id}`,
       }, () => {
         qc.invalidateQueries({ queryKey: ["comments", track.id] });
       })
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "likes", 
-        filter: `track_id=eq.${track.id}` 
-      }, () => {
-        qc.invalidateQueries({ queryKey: ["track", track.id] });
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "likes",
+        filter: `track_id=eq.${track.id}`,
+      }, (payload: any) => {
+        setLikesCount((c) => c + 1);
+        if (user && payload.new?.user_id === user.id) setLiked(true);
+      })
+      .on("postgres_changes", {
+        event: "DELETE",
+        schema: "public",
+        table: "likes",
+        filter: `track_id=eq.${track.id}`,
+      }, (payload: any) => {
+        setLikesCount((c) => Math.max(0, c - 1));
+        if (user && payload.old?.user_id === user.id) setLiked(false);
       })
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [track.id, qc]);
+  }, [track.id, qc, user?.id]);
 
   const isCurrent = current?.id === track.id;
 
@@ -211,12 +249,32 @@ function TrackPage() {
       toast.error("Sign in to like");
       return;
     }
-    if (track.liked_by_me) {
-      await supabase.from("likes").delete().eq("track_id", track.id).eq("user_id", user.id);
-    } else {
-      await supabase.from("likes").insert({ track_id: track.id, user_id: user.id });
+    if (likeBusy) return;
+    setLikeBusy(true);
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikesCount((c) => Math.max(0, c + (wasLiked ? -1 : 1)));
+    try {
+      if (wasLiked) {
+        const { error } = await supabase
+          .from("likes")
+          .delete()
+          .eq("track_id", track.id)
+          .eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("likes")
+          .insert({ track_id: track.id, user_id: user.id });
+        if (error && error.code !== "23505") throw error;
+      }
+    } catch (e) {
+      setLiked(wasLiked);
+      setLikesCount((c) => Math.max(0, c + (wasLiked ? 1 : -1)));
+      toast.error(friendlyError(e, "Could not update like"));
+    } finally {
+      setLikeBusy(false);
     }
-    qc.invalidateQueries({ queryKey: ["track", track.id] });
   };
 
   const repost = async () => {

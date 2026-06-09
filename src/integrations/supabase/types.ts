@@ -234,6 +234,7 @@ export type Database = {
           duration: number | null
           id: string
           plays_count: number
+          slug: string | null
           tags: string[] | null
           title: string
           user_id: string
@@ -246,6 +247,7 @@ export type Database = {
           duration?: number | null
           id?: string
           plays_count?: number
+          slug?: string | null
           tags?: string[] | null
           title: string
           user_id: string
@@ -258,6 +260,7 @@ export type Database = {
           duration?: number | null
           id?: string
           plays_count?: number
+          slug?: string | null
           tags?: string[] | null
           title?: string
           user_id?: string
