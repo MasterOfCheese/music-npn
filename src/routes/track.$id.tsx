@@ -295,17 +295,52 @@ function TrackPage() {
 
   const repost = async () => {
     if (!user) return toast.error("Sign in to repost");
-    const { error } = await supabase.from("reposts").insert({ track_id: track.id, user_id: user.id });
-    if (error && error.code !== "23505") toast.error(friendlyError(error, "Repost failed"));
-    else toast.success("Reposted");
+    if (repostBusy) return;
+    setRepostBusy(true);
+    const was = reposted;
+    setReposted(!was);
+    try {
+      if (was) {
+        const { error } = await supabase
+          .from("reposts")
+          .delete()
+          .eq("track_id", track.id)
+          .eq("user_id", user.id);
+        if (error) throw error;
+        toast.success("Removed repost");
+      } else {
+        const { error } = await supabase
+          .from("reposts")
+          .insert({ track_id: track.id, user_id: user.id });
+        if (error && error.code !== "23505") throw error;
+        toast.success("Reposted");
+      }
+    } catch (e) {
+      setReposted(was);
+      toast.error(friendlyError(e, "Repost failed"));
+    } finally {
+      setRepostBusy(false);
+    }
   };
 
   const share = async () => {
     const url = window.location.href;
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied");
-    } catch {}
+      if (navigator.share) {
+        await navigator.share({ title: track.title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      }
+    } catch (e: any) {
+      if (e?.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      } catch {
+        toast.error("Could not share");
+      }
+    }
   };
 
   const postComment = async (e: React.FormEvent) => {
