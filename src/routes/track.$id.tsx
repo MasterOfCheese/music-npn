@@ -73,7 +73,7 @@ async function fetchTrackByUsernameAndSlug(username: string, slug: string, uid?:
 
 // Original fetchTrack function (giữ nguyên)
 async function fetchTrack(id: string, uid?: string): Promise<Track> {
-  console.log("🔍 Fetching track by UUID:", id);
+  // console.log("🔍 Fetching track by UUID:", id);
   
   const { data, error } = await supabase
     .from("tracks")
