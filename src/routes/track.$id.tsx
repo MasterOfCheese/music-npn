@@ -189,8 +189,16 @@ function TrackPage() {
           .eq("user_id", user.id)
           .maybeSingle();
         if (!cancel) setLiked(!!data);
+        const { data: r } = await supabase
+          .from("reposts")
+          .select("id")
+          .eq("track_id", track.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (!cancel) setReposted(!!r);
       } else if (!cancel) {
         setLiked(false);
+        setReposted(false);
       }
     })();
     return () => { cancel = true; };
