@@ -410,9 +410,13 @@ function TrackPage() {
               </button>
               <button
                 onClick={repost}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:border-primary/50"
+                disabled={repostBusy}
+                className={
+                  "inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:border-primary/50 disabled:opacity-60 " +
+                  (reposted ? "text-primary border-primary/50" : "")
+                }
               >
-                <Repeat2 size={14} /> Repost
+                <Repeat2 size={14} /> {reposted ? "Reposted" : "Repost"}
               </button>
               <button
                 onClick={share}
