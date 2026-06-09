@@ -224,8 +224,11 @@ function TrackPage() {
         table: "likes",
         filter: `track_id=eq.${track.id}`,
       }, (payload: any) => {
+        if (user && payload.new?.user_id === user.id) {
+          setLiked(true);
+          return;
+        }
         setLikesCount((c) => c + 1);
-        if (user && payload.new?.user_id === user.id) setLiked(true);
       })
       .on("postgres_changes", {
         event: "DELETE",
@@ -233,8 +236,11 @@ function TrackPage() {
         table: "likes",
         filter: `track_id=eq.${track.id}`,
       }, (payload: any) => {
+        if (user && payload.old?.user_id === user.id) {
+          setLiked(false);
+          return;
+        }
         setLikesCount((c) => Math.max(0, c - 1));
-        if (user && payload.old?.user_id === user.id) setLiked(false);
       })
       .subscribe();
     return () => {
@@ -348,13 +354,14 @@ function TrackPage() {
               </button>
               <button
                 onClick={toggleLike}
+                disabled={likeBusy}
                 className={
-                  "inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:border-primary/50 " +
-                  (track.liked_by_me ? "text-primary border-primary/50" : "")
+                  "inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm hover:border-primary/50 disabled:opacity-60 " +
+                  (liked ? "text-primary border-primary/50" : "")
                 }
               >
-                <Heart size={14} fill={track.liked_by_me ? "currentColor" : "none"} />
-                {track.likes_count}
+                <Heart size={14} fill={liked ? "currentColor" : "none"} />
+                {likesCount}
               </button>
               <button
                 onClick={repost}
