@@ -660,3 +660,102 @@ function AlbumsTabContent({
   );
 }
 
+
+function StatsTab({ userId }: { userId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["profile-stats", userId],
+    queryFn: () => fetchStats(userId),
+  });
+
+  if (isLoading || !data) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 rounded-lg bg-card border border-border animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  const stat = (label: string, value: number, Icon: any) => (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Icon size={12} /> {label}
+      </div>
+      <div className="mt-1 text-2xl font-bold">{value.toLocaleString()}</div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {stat("Total plays received", data.totalPlays, Play)}
+        {stat("Likes received", data.totalLikesReceived, Heart)}
+        {stat("Tracks listened", data.totalListens, Headphones)}
+        {stat("Reposts made", data.totalReposts, Repeat2)}
+      </div>
+
+      <section>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+          <Headphones size={14} /> Most-listened tracks
+        </h3>
+        {data.topListened.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No listening activity yet.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {data.topListened.map((t: any) => (
+              <div key={t.id} className="relative">
+                <TrackCard track={t} />
+                <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium border border-primary/20">
+                  {t._userPlays} plays
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+          <Play size={14} /> Top tracks (most played)
+        </h3>
+        {data.ownTopTracks.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No uploaded tracks yet.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {data.ownTopTracks.map((t: any) => (
+              <TrackCard key={t.id} track={t} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+          <Tag size={14} /> Top tags
+        </h3>
+        {data.topTags.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No tags used yet.
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {data.topTags.map((t) => (
+              <span
+                key={t.tag}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs"
+              >
+                #{t.tag}
+                <span className="text-muted-foreground">×{t.count}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
