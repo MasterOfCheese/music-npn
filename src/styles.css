@@ -36,37 +36,36 @@
 :root {
   --radius: 0.5rem;
 
-  /* Dark by default */
-  --background: oklch(0.16 0.012 260);
-  --foreground: oklch(0.97 0.005 260);
+  /* Light theme */
+  --background: oklch(0.99 0.003 260);
+  --foreground: oklch(0.18 0.012 260);
 
-  --card: oklch(0.20 0.012 260);
-  --card-foreground: oklch(0.97 0.005 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.012 260);
 
-  --popover: oklch(0.20 0.012 260);
-  --popover-foreground: oklch(0.97 0.005 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.012 260);
 
-  /* SoundCloud orange */
   --primary: oklch(0.68 0.22 36);
   --primary-foreground: oklch(0.99 0 0);
 
-  --secondary: oklch(0.26 0.012 260);
-  --secondary-foreground: oklch(0.97 0.005 260);
+  --secondary: oklch(0.95 0.008 260);
+  --secondary-foreground: oklch(0.20 0.012 260);
 
-  --muted: oklch(0.24 0.01 260);
-  --muted-foreground: oklch(0.66 0.02 260);
+  --muted: oklch(0.95 0.008 260);
+  --muted-foreground: oklch(0.45 0.02 260);
 
-  --accent: oklch(0.30 0.04 36);
-  --accent-foreground: oklch(0.97 0.005 260);
+  --accent: oklch(0.94 0.04 36);
+  --accent-foreground: oklch(0.22 0.04 36);
 
   --destructive: oklch(0.62 0.22 28);
   --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.28 0.012 260);
-  --input: oklch(0.26 0.012 260);
+  --border: oklch(0.90 0.008 260);
+  --input: oklch(0.92 0.008 260);
   --ring: oklch(0.68 0.22 36);
 
-  --waveform: oklch(0.42 0.015 260);
+  --waveform: oklch(0.80 0.012 260);
   --waveform-progress: oklch(0.68 0.22 36);
 }
 
@@ -95,7 +94,8 @@
 }
 
 @layer base {
-  html { color-scheme: dark; }
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
   * { border-color: var(--color-border); }
   body {
     background-color: var(--color-background);
@@ -103,7 +103,11 @@
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
   }
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
+
 
 @utility gradient-orange {
   background-image: linear-gradient(135deg, oklch(0.72 0.22 40), oklch(0.62 0.22 28));

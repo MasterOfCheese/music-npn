@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
 import { PlayerProvider } from "@/lib/player-context";
+import { ThemeProvider } from "@/lib/theme-context";
 import { AppShell } from "@/components/AppShell";
 
 function NotFoundComponent() {
@@ -96,9 +97,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const themeInit = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
         <HeadContent />
       </head>
       <body>
@@ -114,13 +117,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PlayerProvider>
-          <AppShell>
-            <Outlet />
-          </AppShell>
-        </PlayerProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <PlayerProvider>
+            <AppShell>
+              <Outlet />
+            </AppShell>
+          </PlayerProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
