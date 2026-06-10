@@ -201,7 +201,7 @@ function Profile() {
   const { data: tabData, isLoading: tabLoading } = useQuery({
     queryKey: ["profile-tab", profileId, tab],
     queryFn: () => fetchTabData(profileId!, tab),
-    enabled: !!profileId,
+    enabled: !!profileId && tab !== "stats",
   });
 
   const followMut = useMutation({
