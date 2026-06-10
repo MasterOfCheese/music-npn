@@ -17,6 +17,10 @@ import {
   Plus,
   Lock,
   Globe,
+  BarChart3,
+  Headphones,
+  Play,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errors";
@@ -33,7 +37,86 @@ export const Route = createFileRoute("/profile/$username")({
   }),
 });
 
-type Tab = "tracks" | "albums" | "likes" | "reposts";
+type Tab = "tracks" | "albums" | "likes" | "reposts" | "stats";
+
+async function fetchStats(userId: string) {
+  const TRACK_BRIEF =
+    "id, title, slug, plays_count, tags, cover_url, user_id, audio_url, duration, description, created_at, profiles!tracks_user_id_fkey(username, display_name, avatar_url), likes(count)";
+
+  const [ownTracksRes, listenRes, listenCountRes, repostsCountRes, likesGivenRes] =
+    await Promise.all([
+      supabase
+        .from("tracks")
+        .select(TRACK_BRIEF)
+        .eq("user_id", userId)
+        .order("plays_count", { ascending: false }),
+      supabase
+        .from("play_history")
+        .select("track_id, played_at")
+        .eq("user_id", userId)
+        .order("played_at", { ascending: false })
+        .limit(500),
+      supabase.from("play_history").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("reposts").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("likes").select("*", { count: "exact", head: true }).eq("user_id", userId),
+    ]);
+
+  const ownTracks = (ownTracksRes.data ?? []) as any[];
+  const totalPlays = ownTracks.reduce((s, t) => s + (t.plays_count || 0), 0);
+  const totalLikesReceived = ownTracks.reduce(
+    (s, t) => s + (t.likes?.[0]?.count ?? 0),
+    0,
+  );
+
+  // Top tags from own tracks
+  const tagCounts = new Map<string, number>();
+  for (const t of ownTracks) {
+    for (const tag of (t.tags ?? []) as string[]) {
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    }
+  }
+  const topTags = [...tagCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([tag, count]) => ({ tag, count }));
+
+  // Group play_history by track_id
+  const playCounts = new Map<string, number>();
+  for (const row of (listenRes.data ?? []) as any[]) {
+    playCounts.set(row.track_id, (playCounts.get(row.track_id) ?? 0) + 1);
+  }
+  const topListenedIds = [...playCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  let topListened: any[] = [];
+  if (topListenedIds.length) {
+    const ids = topListenedIds.map(([id]) => id);
+    const { data } = await supabase
+      .from("tracks")
+      .select(TRACK_BRIEF)
+      .in("id", ids);
+    const byId = new Map((data ?? []).map((t: any) => [t.id, t]));
+    topListened = topListenedIds
+      .map(([id, count]) => {
+        const t: any = byId.get(id);
+        return t ? { ...t, _userPlays: count, likes_count: t.likes?.[0]?.count ?? 0 } : null;
+      })
+      .filter(Boolean);
+  }
+
+  return {
+    ownTopTracks: ownTracks
+      .slice(0, 5)
+      .map((t: any) => ({ ...t, likes_count: t.likes?.[0]?.count ?? 0 })),
+    totalPlays,
+    totalLikesReceived,
+    totalListens: listenCountRes.count ?? 0,
+    totalReposts: repostsCountRes.count ?? 0,
+    totalLikesGiven: likesGivenRes.count ?? 0,
+    topTags,
+    topListened,
+  };
+}
 
 async function fetchProfile(username: string, viewerId?: string) {
   const { data: profile, error } = await supabase
@@ -118,7 +201,7 @@ function Profile() {
   const { data: tabData, isLoading: tabLoading } = useQuery({
     queryKey: ["profile-tab", profileId, tab],
     queryFn: () => fetchTabData(profileId!, tab),
-    enabled: !!profileId,
+    enabled: !!profileId && tab !== "stats",
   });
 
   const followMut = useMutation({
@@ -279,6 +362,7 @@ function Profile() {
             ["albums", "Albums", ListMusic],
             ["likes", "Likes", Heart],
             ["reposts", "Reposts", Repeat2],
+            ["stats", "Stats", BarChart3],
           ] as const).map(([k, label, Icon]) => (
             <button
               key={k}
@@ -297,7 +381,9 @@ function Profile() {
 
         {/* Tab content */}
         <div className="mt-6 mb-12">
-          {tab === "albums" ? (
+          {tab === "stats" ? (
+            <StatsTab userId={profile.id} />
+          ) : tab === "albums" ? (
             <AlbumsTabContent
               userId={profile.id}
               isOwn={isOwn}
@@ -574,3 +660,102 @@ function AlbumsTabContent({
   );
 }
 
+
+function StatsTab({ userId }: { userId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["profile-stats", userId],
+    queryFn: () => fetchStats(userId),
+  });
+
+  if (isLoading || !data) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 rounded-lg bg-card border border-border animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  const stat = (label: string, value: number, Icon: any) => (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Icon size={12} /> {label}
+      </div>
+      <div className="mt-1 text-2xl font-bold">{value.toLocaleString()}</div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {stat("Total plays received", data.totalPlays, Play)}
+        {stat("Likes received", data.totalLikesReceived, Heart)}
+        {stat("Tracks listened", data.totalListens, Headphones)}
+        {stat("Reposts made", data.totalReposts, Repeat2)}
+      </div>
+
+      <section>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+          <Headphones size={14} /> Most-listened tracks
+        </h3>
+        {data.topListened.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No listening activity yet.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {data.topListened.map((t: any) => (
+              <div key={t.id} className="relative">
+                <TrackCard track={t} />
+                <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium border border-primary/20">
+                  {t._userPlays} plays
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+          <Play size={14} /> Top tracks (most played)
+        </h3>
+        {data.ownTopTracks.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No uploaded tracks yet.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {data.ownTopTracks.map((t: any) => (
+              <TrackCard key={t.id} track={t} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+          <Tag size={14} /> Top tags
+        </h3>
+        {data.topTags.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+            No tags used yet.
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {data.topTags.map((t) => (
+              <span
+                key={t.tag}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-xs"
+              >
+                #{t.tag}
+                <span className="text-muted-foreground">×{t.count}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}

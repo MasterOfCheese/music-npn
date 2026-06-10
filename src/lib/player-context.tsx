@@ -146,6 +146,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               }
             },
           );
+          // record per-user play history (best-effort, only if signed in)
+          supabase.auth.getUser().then(({ data }) => {
+            const uid = data.user?.id;
+            if (!uid) return;
+            (supabase.from("play_history") as any)
+              .insert({ user_id: uid, track_id: trackId })
+              .then(({ error }: { error: unknown }) => {
+                if (error) console.warn("play_history insert failed", error);
+              });
+          });
         }
       }
     };
