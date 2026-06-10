@@ -37,7 +37,86 @@ export const Route = createFileRoute("/profile/$username")({
   }),
 });
 
-type Tab = "tracks" | "albums" | "likes" | "reposts";
+type Tab = "tracks" | "albums" | "likes" | "reposts" | "stats";
+
+async function fetchStats(userId: string) {
+  const TRACK_BRIEF =
+    "id, title, slug, plays_count, tags, cover_url, user_id, audio_url, duration, description, created_at, profiles!tracks_user_id_fkey(username, display_name, avatar_url), likes(count)";
+
+  const [ownTracksRes, listenRes, listenCountRes, repostsCountRes, likesGivenRes] =
+    await Promise.all([
+      supabase
+        .from("tracks")
+        .select(TRACK_BRIEF)
+        .eq("user_id", userId)
+        .order("plays_count", { ascending: false }),
+      supabase
+        .from("play_history")
+        .select("track_id, played_at")
+        .eq("user_id", userId)
+        .order("played_at", { ascending: false })
+        .limit(500),
+      supabase.from("play_history").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("reposts").select("*", { count: "exact", head: true }).eq("user_id", userId),
+      supabase.from("likes").select("*", { count: "exact", head: true }).eq("user_id", userId),
+    ]);
+
+  const ownTracks = (ownTracksRes.data ?? []) as any[];
+  const totalPlays = ownTracks.reduce((s, t) => s + (t.plays_count || 0), 0);
+  const totalLikesReceived = ownTracks.reduce(
+    (s, t) => s + (t.likes?.[0]?.count ?? 0),
+    0,
+  );
+
+  // Top tags from own tracks
+  const tagCounts = new Map<string, number>();
+  for (const t of ownTracks) {
+    for (const tag of (t.tags ?? []) as string[]) {
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    }
+  }
+  const topTags = [...tagCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([tag, count]) => ({ tag, count }));
+
+  // Group play_history by track_id
+  const playCounts = new Map<string, number>();
+  for (const row of (listenRes.data ?? []) as any[]) {
+    playCounts.set(row.track_id, (playCounts.get(row.track_id) ?? 0) + 1);
+  }
+  const topListenedIds = [...playCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  let topListened: any[] = [];
+  if (topListenedIds.length) {
+    const ids = topListenedIds.map(([id]) => id);
+    const { data } = await supabase
+      .from("tracks")
+      .select(TRACK_BRIEF)
+      .in("id", ids);
+    const byId = new Map((data ?? []).map((t: any) => [t.id, t]));
+    topListened = topListenedIds
+      .map(([id, count]) => {
+        const t: any = byId.get(id);
+        return t ? { ...t, _userPlays: count, likes_count: t.likes?.[0]?.count ?? 0 } : null;
+      })
+      .filter(Boolean);
+  }
+
+  return {
+    ownTopTracks: ownTracks
+      .slice(0, 5)
+      .map((t: any) => ({ ...t, likes_count: t.likes?.[0]?.count ?? 0 })),
+    totalPlays,
+    totalLikesReceived,
+    totalListens: listenCountRes.count ?? 0,
+    totalReposts: repostsCountRes.count ?? 0,
+    totalLikesGiven: likesGivenRes.count ?? 0,
+    topTags,
+    topListened,
+  };
+}
 
 async function fetchProfile(username: string, viewerId?: string) {
   const { data: profile, error } = await supabase
