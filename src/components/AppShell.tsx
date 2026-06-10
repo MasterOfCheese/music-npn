@@ -1,13 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { Upload, LogIn, LogOut, Music2, User } from "lucide-react";
+import { Upload, LogIn, LogOut, Music2, User, Sun, Moon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { PlayerBar } from "./PlayerBar";
+import { useTheme } from "@/lib/theme-context";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth();
+  const { theme, toggle } = useTheme();
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
