@@ -362,6 +362,7 @@ function Profile() {
             ["albums", "Albums", ListMusic],
             ["likes", "Likes", Heart],
             ["reposts", "Reposts", Repeat2],
+            ["stats", "Stats", BarChart3],
           ] as const).map(([k, label, Icon]) => (
             <button
               key={k}
@@ -380,7 +381,9 @@ function Profile() {
 
         {/* Tab content */}
         <div className="mt-6 mb-12">
-          {tab === "albums" ? (
+          {tab === "stats" ? (
+            <StatsTab userId={profile.id} />
+          ) : tab === "albums" ? (
             <AlbumsTabContent
               userId={profile.id}
               isOwn={isOwn}
