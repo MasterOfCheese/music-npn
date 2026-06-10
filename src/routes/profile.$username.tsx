@@ -17,6 +17,10 @@ import {
   Plus,
   Lock,
   Globe,
+  BarChart3,
+  Headphones,
+  Play,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errors";
